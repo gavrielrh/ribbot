@@ -12,7 +12,7 @@ Deno.test("converts h tag", () => {
 
 Deno.test("converts p tag", () => {
   const given = "<p>text</p>";
-  const expected = "\ntext\n";
+  const expected = "text\n";
   assertEquals(htmlToMarkdown(given), expected);
 });
 

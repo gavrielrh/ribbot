@@ -1,8 +1,8 @@
 export function htmlToMarkdown(html: string): string {
   return html
-    .replaceAll(/<\/?h\d.*?>/g, "**")
-    .replaceAll(/<\/?p.*?>/g, "\n")
-    .replaceAll(/<\/?span.*?>/g, "")
+    .replaceAll(/<h\d.*?>(.*?)<\/h\d>/g, "**$1**")
+    .replaceAll(/<p.*?>(.*?)<\/p>/g, "$1\n")
+    .replaceAll(/<span.*?>(.*?)<\/span>/g, "$1")
     .replaceAll(/<\/?img.*?>/g, "")
     .replaceAll(/<\/?meta.*?>/g, "")
     .replaceAll(/<\/?br.*?>/g, "\n")
