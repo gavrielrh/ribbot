@@ -1,0 +1,10 @@
+{
+  "tasks": {
+    "dev": "deno run --watch -A src/main.ts",
+    "deploy:commands": "deno run -A src/deploy-commands.ts"
+  },
+  "imports": {
+    "discord": "npm:discord.js@14.11.0"
+  },
+  "unstable": ["kv"]
+}
