@@ -170,10 +170,3 @@ export async function getTeas(): Promise<Tea[]> {
     available: isAvailable(tea),
   }));
 }
-
-export async function saveTeasToStore(teas: Tea[]) {
-  const kv = await Deno.openKv();
-  for await (const tea of teas) {
-    await kv.set(["tea", tea.title.toLowerCase()], tea);
-  }
-}

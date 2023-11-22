@@ -4,8 +4,7 @@ import {
   EmbedBuilder,
   SlashCommandBuilder,
 } from "discord";
-import { Tea } from "../api_clients/happy_earth.ts";
-import { getTeasFromKv } from "../store.ts";
+import { getTeaFromKv, getTeasFromKv } from "../store.ts";
 
 const data = new SlashCommandBuilder()
   .setName("tea")
@@ -21,8 +20,7 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     return;
   }
   const title = interaction.options.data[0].value as string;
-  const kv = await Deno.openKv();
-  const tea = (await kv.get(["tea", title.toLowerCase()])).value as Tea;
+  const tea = await getTeaFromKv(title);
   const embed = new EmbedBuilder()
     .setTitle(tea.title)
     // .addFields({ name: "Available", value: tea.available.toString() })
