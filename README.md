@@ -7,8 +7,8 @@ It is written in Typescript, using the [Deno runtime](https://deno.land) and the
 
 ## Requirements
 
-A version of Deno new enough for `Node.js` compatibility. This example is
-confirmed to work with `Deno@1.34.3`.
+A version of Deno new enough for `Node.js` compatibility and the `KV` unstable
+feature. This application is confirmed to work with `Deno@1.38.3`.
 
 ## Getting Started
 
