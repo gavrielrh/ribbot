@@ -1,11 +1,10 @@
 import {
-  AutocompleteInteraction,
   ChatInputCommandInteraction,
   EmbedBuilder,
   SlashCommandBuilder,
 } from "discord";
-import { getTeaFromKv, getTeasFromKv } from "../store.ts";
-import { Tea } from "../api_clients/happy_earth.ts";
+import { getTeasFromKv } from "../store.ts";
+import { Tea } from "../api_clients/happy-earth.ts";
 
 const CATEGORIES = [
   "Black",

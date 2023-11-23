@@ -1,6 +1,4 @@
-import { htmlToMarkdown } from "../format.ts";
-
-type Image = {
+export type Image = {
   created_at: string | null;
   height: number | null;
   id: number | null;
@@ -12,7 +10,7 @@ type Image = {
   width: number | null;
 };
 
-type Variant = {
+export type Variant = {
   barcode: string | null;
   compare_at_price: string | null;
   created_at: string | null;
@@ -40,7 +38,7 @@ type Variant = {
   weight_unit: string | null;
 };
 
-type Product = {
+export type Product = {
   title: string | null;
   body_html: string | null;
   created_at: string | null;
@@ -59,23 +57,25 @@ type Product = {
   vendor: string | null;
 };
 
-const BASE_URL = "https://happyearthtea.com";
 const MAX_PRODUCTS_PER_PAGE = 250;
 
-async function getProducts(page = 1): Promise<Product[]> {
+export async function getProducts(
+  baseUrl: string,
+  page = 1,
+): Promise<Product[]> {
   const data = await fetch(
-    `${BASE_URL}/products.json?page=${page}&limit=${MAX_PRODUCTS_PER_PAGE}`,
+    `${baseUrl}/products.json?page=${page}&limit=${MAX_PRODUCTS_PER_PAGE}`,
   );
   const json = await data.json();
   return json.products;
 }
 
-async function getAllProducts(): Promise<Product[]> {
+export async function getAllProducts(baseUrl: string): Promise<Product[]> {
   const allProducts: Product[] = [];
   let page = 1;
   const MAX_PAGES = 100;
   while (page < MAX_PAGES) {
-    const products = await getProducts(page);
+    const products = await getProducts(baseUrl, page);
     if (products.length === 0) break;
     allProducts.push(...products);
     page += 1;
@@ -83,24 +83,7 @@ async function getAllProducts(): Promise<Product[]> {
   return allProducts;
 }
 
-function getThumbnail(product: Product): string | null {
-  const variants = product.variants;
-  if (variants) {
-    const variantWithSource = variants?.find((variant: any) =>
-      variant.featured_image?.src
-    );
-    if (variantWithSource) {
-      return variantWithSource.featured_image.src;
-    }
-  }
-  return null;
-}
-
-function isAvailable(product: Product): boolean {
-  return Boolean(product.variants?.at(0).available);
-}
-
-function productHasTag(product: Product, tag: string): boolean {
+export function productHasTag(product: Product, tag: string): boolean {
   if (!product.tags) {
     return false;
   }
@@ -111,64 +94,4 @@ function productHasTag(product: Product, tag: string): boolean {
     return product.tags.some((productTag) => productTag === tag);
   }
   return false;
-}
-
-function filterTeas(products: Product[]): Product[] {
-  const TYPE_DENY_LIST = [
-    "Accessories",
-    "Books",
-    "gifts",
-    "Gifts",
-    "Teaware",
-    "Event Tickets",
-    "gift-card-product",
-  ];
-  const TAGS_DENY_LIST = [
-    "gift",
-    "gifts",
-    "Chasaku",
-    "Chashaku",
-    "Chasen",
-    "Sifter",
-    "GIST_GIFT_CARD",
-  ];
-  const TITLE_DENY_LIST = [
-    " oz",
-    "Sampler Set",
-    "Tea Filters",
-    "Tea Tray",
-    "Whisk",
-    "Gift Card",
-  ];
-
-  return products
-    .filter((product) =>
-      !TITLE_DENY_LIST.some((title) => product.title?.includes(title))
-    )
-    .filter((product) =>
-      !TAGS_DENY_LIST.some((tag) => productHasTag(product, tag))
-    )
-    .filter((product) =>
-      !TYPE_DENY_LIST.some((type) => product.product_type === type)
-    );
-}
-
-export type Tea = {
-  title: string;
-  description: string;
-  thumbnail: string | null;
-  available: boolean;
-  productType: string | null;
-};
-
-export async function getTeas(): Promise<Tea[]> {
-  const allProducts = await getAllProducts();
-  const teas = filterTeas(allProducts);
-  return teas.map((tea) => ({
-    title: tea.title || "",
-    description: htmlToMarkdown(tea.body_html || ""),
-    thumbnail: getThumbnail(tea),
-    available: isAvailable(tea),
-    productType: tea.product_type,
-  }));
 }

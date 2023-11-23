@@ -1,4 +1,4 @@
-import { Tea } from "./api_clients/happy_earth.ts";
+import { Tea } from "./api_clients/happy-earth.ts";
 
 export async function saveTeasToStore(teas: Tea[]) {
   const kv = await Deno.openKv();

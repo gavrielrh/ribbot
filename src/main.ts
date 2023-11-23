@@ -1,7 +1,7 @@
 import { Events, GatewayIntentBits } from "discord";
 import { Client } from "./client.ts";
 import { token } from "./config.ts";
-import { getTeas } from "./api_clients/happy_earth.ts";
+import { getTeas } from "./api_clients/happy-earth.ts";
 import { saveTeasToStore } from "./store.ts";
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
