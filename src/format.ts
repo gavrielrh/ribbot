@@ -12,5 +12,12 @@ export function htmlToMarkdown(html: string): string {
       "[$2]($1)",
     )
     .replaceAll(/<\/?iframe.*?>/g, "")
-    .replaceAll(/<\/?strong.*?>/g, "**");
+    .replaceAll(/<\/?strong.*?>/g, "**")
+    .replaceAll(/<\/?em.*?>/g, "_")
+    .replaceAll(/<\/?div.*?>/g, "")
+    .replaceAll(/<\/?ul.*?>/g, "")
+    .replaceAll(/<li.*?>/g, "\n- ")
+    .replaceAll(/<\/li.*?>/g, "")
+    .replaceAll(/<(\w+)(?:\s[^>]*>|)>\s*<\/\1>/g, "")
+    .replaceAll(/(\n{3,})/g, "\n\n");
 }

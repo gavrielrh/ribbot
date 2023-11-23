@@ -63,3 +63,39 @@ Deno.test("converts strong tag", () => {
   const expected = "**text**";
   assertEquals(htmlToMarkdown(given), expected);
 });
+
+Deno.test("converts em tag", () => {
+  const given = "<em>text</em>";
+  const expected = "_text_";
+  assertEquals(htmlToMarkdown(given), expected);
+});
+
+Deno.test("converts div tag", () => {
+  const given = "<div>text</div>";
+  const expected = "text";
+  assertEquals(htmlToMarkdown(given), expected);
+});
+
+Deno.test("converts ul tag", () => {
+  const given = "<ul>text</ul>";
+  const expected = "text";
+  assertEquals(htmlToMarkdown(given), expected);
+});
+
+Deno.test("converts li tag", () => {
+  const given = "<li>text</li>";
+  const expected = "\n- text";
+  assertEquals(htmlToMarkdown(given), expected);
+});
+
+Deno.test("removes empty tags", () => {
+  const given = "<foo></foo>";
+  const expected = "";
+  assertEquals(htmlToMarkdown(given), expected);
+});
+
+Deno.test("removes extra newlines", () => {
+  const given = "\n\n\n\n\nfoo";
+  const expected = "\n\nfoo";
+  assertEquals(htmlToMarkdown(given), expected);
+});
