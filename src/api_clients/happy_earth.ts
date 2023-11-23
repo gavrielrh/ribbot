@@ -158,6 +158,7 @@ export type Tea = {
   description: string;
   thumbnail: string | null;
   available: boolean;
+  productType: string | null;
 };
 
 export async function getTeas(): Promise<Tea[]> {
@@ -168,5 +169,6 @@ export async function getTeas(): Promise<Tea[]> {
     description: htmlToMarkdown(tea.body_html || ""),
     thumbnail: getThumbnail(tea),
     available: isAvailable(tea),
+    productType: tea.product_type,
   }));
 }

@@ -8,7 +8,7 @@ const registerGlobally: boolean = parsedArgs.global;
 
 const commands = [];
 
-for await (const file of Deno.readDir(`./commands`)) {
+for await (const file of Deno.readDir(`./src/commands`)) {
   const command = await import(`./commands/${file.name}`);
   if ("data" in command && "execute" in command) {
     commands.push(command.data.toJSON());

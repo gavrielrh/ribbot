@@ -1,6 +1,6 @@
 export function htmlToMarkdown(html: string): string {
   return html
-    .replaceAll(/<h\d.*?>(.*?)<\/h\d>/g, "**$1**")
+    .replaceAll(/<\/?h\d.*?>/g, "**")
     .replaceAll(/<p.*?>(.*?)<\/p>/g, "$1\n")
     .replaceAll(/<span.*?>(.*?)<\/span>/g, "$1")
     .replaceAll(/<\/?img.*?>/g, "")
