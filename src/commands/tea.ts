@@ -1,5 +1,8 @@
 import {
+  ActionRowBuilder,
   AutocompleteInteraction,
+  ButtonBuilder,
+  ButtonStyle,
   ChatInputCommandInteraction,
   EmbedBuilder,
   SlashCommandBuilder,
@@ -23,13 +26,31 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
   const tea = await getTeaFromKv(title);
   const embed = new EmbedBuilder()
     .setTitle(tea.title)
-    // .addFields({ name: "Available", value: tea.available.toString() })
+    .addFields({ name: "In-stock", value: tea.available ? "yes" : "no" })
     .setDescription(tea.description);
   if (tea.thumbnail) {
     embed.setThumbnail(tea.thumbnail);
   }
+  const dislikeButton = new ButtonBuilder()
+    .setCustomId("dislike")
+    .setLabel("Don't Recommend")
+    .setEmoji("👎")
+    .setStyle(ButtonStyle.Danger);
+  const likeButton = new ButtonBuilder()
+    .setCustomId("like")
+    .setLabel("Favorite!")
+    .setEmoji("👍")
+    .setStyle(ButtonStyle.Success);
+  const clearButton = new ButtonBuilder()
+    .setCustomId("clear")
+    .setLabel("Clear Status")
+    .setEmoji("🧹")
+    .setStyle(ButtonStyle.Secondary);
+  const actionRow = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(likeButton, dislikeButton, clearButton);
   await interaction.reply({
     embeds: [embed],
+    components: [actionRow],
   });
 };
 

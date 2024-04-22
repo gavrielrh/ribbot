@@ -29,6 +29,9 @@ function filterTeas(products: Product[]): Product[] {
     "Teaware",
     "Event Tickets",
     "gift-card-product",
+    "Bits and Bites",
+    "Snacks",
+    "Teaware > Tea Pot",
   ];
   const TAGS_DENY_LIST = [
     "gift",
@@ -38,6 +41,10 @@ function filterTeas(products: Product[]): Product[] {
     "Chasen",
     "Sifter",
     "GIST_GIFT_CARD",
+    "Treats",
+    "Tea Pots",
+    "Tea Cups",
+    "Chawan",
   ];
   const TITLE_DENY_LIST = [
     " oz",
@@ -47,6 +54,10 @@ function filterTeas(products: Product[]): Product[] {
     "Whisk",
     "Gift Card",
   ];
+  const VENDOR_DENY_LIST = [
+    "Douglas Sweets",
+    "The Home Pantry",
+  ];
 
   return products
     .filter((product) =>
@@ -54,9 +65,10 @@ function filterTeas(products: Product[]): Product[] {
     )
     .filter((product) =>
       !TAGS_DENY_LIST.some((tag) => productHasTag(product, tag))
-    )
-    .filter((product) =>
+    ).filter((product) =>
       !TYPE_DENY_LIST.some((type) => product.product_type === type)
+    ).filter((product) =>
+      !VENDOR_DENY_LIST.some((vendor) => product.vendor === vendor)
     );
 }
 

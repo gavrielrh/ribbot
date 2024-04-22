@@ -1,8 +1,17 @@
 import { Events, GatewayIntentBits } from "discord";
 import { Client } from "./client.ts";
-import { token } from "./config.ts";
+import { sentryDsn, token } from "./config.ts";
 import { getTeas } from "./api_clients/happy-earth.ts";
-import { saveTeasToStore } from "./store.ts";
+import { getTeasFromKv, saveTeasToStore } from "./store.ts";
+import { setDislikedTea, setFavoriteTea } from "./user_tea.ts";
+import { clearTeaStatus } from "./user_tea.ts";
+
+// import from the Deno registry
+import * as Sentry from "https://deno.land/x/sentry@7.109.0/index.mjs";
+
+Sentry.init({
+  dsn: sentryDsn,
+});
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -16,9 +25,6 @@ for await (const file of Deno.readDir(`./src/commands`)) {
     );
   }
 }
-
-const teas = await getTeas();
-await saveTeasToStore(teas);
 
 client.once(Events.ClientReady, (c) => {
   console.log(`Ready! Logged in as ${c.user.tag}`);
@@ -72,5 +78,42 @@ client.on(Events.InteractionCreate, async (interaction) => {
     console.error(error);
   }
 });
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isButton()) return;
+
+  const user_snowflake = interaction.user.id;
+  const tea_title = interaction.message.embeds[0].data.title!;
+
+  if (interaction.customId === "dislike") {
+    await setDislikedTea({ user_snowflake, tea_title });
+
+    await interaction.reply({
+      content: "I will not recommend this tea again.",
+      ephemeral: true,
+    });
+  }
+
+  if (interaction.customId === "like") {
+    await setFavoriteTea({ user_snowflake, tea_title });
+
+    await interaction.reply({
+      content: "Tea added to favorites!",
+      ephemeral: true,
+    });
+  }
+
+  if (interaction.customId === "clear") {
+    await clearTeaStatus({ user_snowflake, tea_title });
+
+    await interaction.reply({
+      content: "Claritea",
+      ephemeral: true,
+    });
+  }
+});
+
+const teas = await getTeas();
+await saveTeasToStore(teas);
 
 client.login(token);

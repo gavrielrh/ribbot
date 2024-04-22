@@ -2,9 +2,10 @@ export function htmlToMarkdown(html: string): string {
   return html
     .replaceAll(/<\/?h\d.*?>/g, "**")
     .replaceAll(/<p.*?>(.*?)<\/p>/g, "$1\n")
-    .replaceAll(/<span.*?>(.*?)<\/span>/g, "$1")
+    .replaceAll(/<\/?span.*?>/g, "")
     .replaceAll(/<\/?img.*?>/g, "")
     .replaceAll(/<\/?meta.*?>/g, "")
+    .replaceAll(/\*{3,}/g, "**")
     .replaceAll(/<\/?br.*?>/g, "\n")
     .replaceAll(/nbsp;/g, " ")
     .replaceAll(

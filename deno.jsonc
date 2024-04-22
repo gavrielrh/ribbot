@@ -1,10 +1,12 @@
 {
   "tasks": {
     "dev": "deno run --watch -A src/main.ts",
-    "deploy:commands": "deno run -A src/deploy-commands.ts"
+    "deploy:commands": "deno run -A src/deploy-commands.ts",
+    "deploy:commands:global": "deno run -A src/deploy-commands.ts --global"
   },
   "imports": {
-    "discord": "npm:discord.js@14.11.0"
+    "discord": "npm:discord.js@14.14.1",
+    "pocketbase": "npm:pocketbase@0.20.3"
   },
   "unstable": ["kv"]
 }
