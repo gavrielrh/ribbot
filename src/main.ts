@@ -2,7 +2,7 @@ import { Events, GatewayIntentBits } from "discord";
 import { Client } from "./client.ts";
 import { sentryDsn, token } from "./config.ts";
 import { getTeas } from "./api_clients/happy-earth.ts";
-import { getTeasFromKv, saveTeasToStore } from "./store.ts";
+import { saveTeasToStore } from "./store.ts";
 import { setDislikedTea, setFavoriteTea } from "./user_tea.ts";
 import { clearTeaStatus } from "./user_tea.ts";
 

@@ -4,7 +4,7 @@ import {
   SlashCommandBuilder,
 } from "discord";
 import OpenAI from "npm:openai";
-import { getTeaFromKv, getTeasFromKv } from "../store.ts";
+import { getTeasFromKv } from "../store.ts";
 import { openAIKey } from "../config.ts";
 
 const data = new SlashCommandBuilder()
