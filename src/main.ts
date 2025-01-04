@@ -8,12 +8,15 @@ import { clearTeaStatus } from "./user_tea.ts";
 
 // import from the Deno registry
 import * as Sentry from "https://deno.land/x/sentry@7.109.0/index.mjs";
+import { registerCommands } from "./deploy-commands.ts";
 
 Sentry.init({
   dsn: sentryDsn,
 });
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+await registerCommands(true);
 
 for await (const file of Deno.readDir(`./src/commands`)) {
   const command = await import(`./commands/${file.name}`);
