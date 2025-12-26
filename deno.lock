@@ -8,6 +8,7 @@
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/io@*": "0.224.0",
     "jsr:@std/io@~0.225.2": "0.225.2",
+    "npm:@sentry/deno@*": "10.32.1",
     "npm:@shopify/shopify-api@8.0.2": "8.0.2",
     "npm:@types/node@*": "24.2.0",
     "npm:discord.js@14.11.0": "14.11.0",
@@ -155,6 +156,9 @@
         "ws@8.18.3"
       ]
     },
+    "@opentelemetry/api@1.9.0": {
+      "integrity": "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="
+    },
     "@sapphire/async-queue@1.5.0": {
       "integrity": "sha512-JkLdIsP8fPAdh9ZZjrbHWR/+mZj0wvKS5ICibcLrRI1j84UmLMshx5n9QmL8b95d4onJ2xxiyugTgSAX7AalmA=="
     },
@@ -180,6 +184,16 @@
     },
     "@sapphire/snowflake@3.5.3": {
       "integrity": "sha512-jjmJywLAFoWeBi1W7994zZyiNWPIiqRRNAmSERxyg93xRGzNYvGjlZ0gR6x0F4gPRi2+0O6S71kOZYyr3cxaIQ=="
+    },
+    "@sentry/core@10.32.1": {
+      "integrity": "sha512-PH2ldpSJlhqsMj2vCTyU0BI2Fx1oIDhm7Izo5xFALvjVCS0gmlqHt1udu6YlKn8BtpGH6bGzssvv5APrk+OdPQ=="
+    },
+    "@sentry/deno@10.32.1": {
+      "integrity": "sha512-pOWMtvFDQYAxbNmLgQw5ARpBBCPwRQd34kAaj+tBdhxjSsg32cVtjRpkXFIMkYth0DEbq6dLWEVL1Dgg11vlWA==",
+      "dependencies": [
+        "@opentelemetry/api",
+        "@sentry/core"
+      ]
     },
     "@shopify/network@3.2.1": {
       "integrity": "sha512-Ih/6Oe80dynlUsRfEqptWBfsySCqI0rjQvPAjS8HuWeK9nZ+TvmYScfxjucKXZ2deXwAClnU6SMdh3/B1lMMog==",

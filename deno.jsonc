@@ -1,6 +1,7 @@
 {
   "tasks": {
     "dev": "deno run --watch -A src/main.ts",
+    "dev-temp": "deno run --watch -A --env-file=.env.dontuse src/main.ts",
     "deploy:commands": "deno run -A src/deploy-commands.ts",
     "deploy:commands:global": "deno run -A src/deploy-commands.ts --global",
   },

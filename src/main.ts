@@ -1,4 +1,4 @@
-import { Events, GatewayIntentBits } from "discord";
+import { Events, GatewayIntentBits, MessageFlags } from "discord";
 import * as Sentry from "sentry";
 import { Client } from "./client.ts";
 import { sentryDsn, token } from "./config.ts";
@@ -52,12 +52,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
         content: "There was an error while executing this command!",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     } else {
       await interaction.reply({
         content: "There was an error while executing this command!",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
   }
@@ -93,7 +93,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     await interaction.reply({
       content: "I will not recommend this tea again.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -102,7 +102,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     await interaction.reply({
       content: "Tea added to favorites!",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -111,7 +111,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     await interaction.reply({
       content: "Claritea",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 });
