@@ -1,5 +1,4 @@
-import { SlashCommandBuilder } from "discord";
-import { ChatInputCommandInteraction } from "discord";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord";
 import { getTeas } from "../api_clients/happy-earth.ts";
 import { saveTeasToStore } from "../store.ts";
 import { clearTeaStore } from "../store.ts";

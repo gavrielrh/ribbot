@@ -2,11 +2,16 @@
   "tasks": {
     "dev": "deno run --watch -A src/main.ts",
     "deploy:commands": "deno run -A src/deploy-commands.ts",
-    "deploy:commands:global": "deno run -A src/deploy-commands.ts --global"
+    "deploy:commands:global": "deno run -A src/deploy-commands.ts --global",
   },
   "imports": {
-    "discord": "npm:discord.js@14.16.3",
-    "pocketbase": "npm:pocketbase@0.20.3"
+    "@std/cli": "jsr:@std/cli@^1.0.25",
+    "@std/dotenv": "jsr:@std/dotenv@^0.225.6",
+    "@std/io": "jsr:@std/io@^0.225.2",
+    "discord": "npm:discord.js@14.25.1",
+    "pocketbase": "npm:pocketbase@0.20.3",
+    "sentry": "npm:@sentry/deno",
+    "openai": "npm:openai",
   },
-  "unstable": ["kv"]
+  "unstable": ["kv"],
 }

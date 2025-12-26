@@ -1,5 +1,4 @@
-import { SlashCommandBuilder } from "discord";
-import { ChatInputCommandInteraction } from "discord";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord";
 import { getDislikedTeas } from "../user_tea.ts";
 
 const data = new SlashCommandBuilder()

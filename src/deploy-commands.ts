@@ -1,6 +1,6 @@
 import { APIApplicationCommand, REST, Routes } from "discord";
 import { clientId, guildId, token } from "./config.ts";
-import { parseArgs } from "https://deno.land/std@0.207.0/cli/parse_args.ts";
+import { parseArgs } from "@std/cli/parse-args";
 
 export async function registerCommands(registerGlobally: boolean) {
   const commands = [];
@@ -23,12 +23,12 @@ export async function registerCommands(registerGlobally: boolean) {
       `Started refreshing ${commands.length} application (/) commands.`,
     );
 
-    const data = await rest.put(
+    const data = (await rest.put(
       registerGlobally
         ? Routes.applicationCommands(clientId)
         : Routes.applicationGuildCommands(clientId, guildId),
       { body: commands },
-    ) as Array<APIApplicationCommand>;
+    )) as Array<APIApplicationCommand>;
 
     console.log(
       `Successfully reloaded ${data.length} application (/) commands.`,

@@ -3,7 +3,7 @@ import {
   EmbedBuilder,
   SlashCommandBuilder,
 } from "discord";
-import OpenAI from "npm:openai";
+import OpenAI from "openai";
 import { getTeasFromKv } from "../store.ts";
 import { openAIKey } from "../config.ts";
 

@@ -1,17 +1,17 @@
 import { Events, GatewayIntentBits } from "discord";
+import * as Sentry from "sentry";
 import { Client } from "./client.ts";
 import { sentryDsn, token } from "./config.ts";
 import { getTeas } from "./api_clients/happy-earth.ts";
 import { saveTeasToStore } from "./store.ts";
 import { setDislikedTea, setFavoriteTea } from "./user_tea.ts";
 import { clearTeaStatus } from "./user_tea.ts";
-
-// import from the Deno registry
-import * as Sentry from "https://deno.land/x/sentry@7.109.0/index.mjs";
 import { registerCommands } from "./deploy-commands.ts";
 
 Sentry.init({
   dsn: sentryDsn,
+  tracesSampleRate: 1.0,
+  enableLogs: true,
 });
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });

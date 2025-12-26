@@ -1,4 +1,4 @@
-import { writeAll } from "jsr:@std/io/write-all";
+import { writeAll } from "@std/io/write-all";
 import { getTeasFromKv } from "./store.ts";
 
 // Function to write objects to a JSONL file

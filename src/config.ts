@@ -1,4 +1,4 @@
-import "jsr:@std/dotenv/load";
+import "@std/dotenv/load";
 
 const token = Deno.env.get("DISCORD_TOKEN")!;
 const clientId = Deno.env.get("DISCORD_CLIENT_ID")!;

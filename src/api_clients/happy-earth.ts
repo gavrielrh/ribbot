@@ -53,6 +53,7 @@ function filterTeas(products: Product[]): Product[] {
     "Tea Tray",
     "Whisk",
     "Gift Card",
+    " Mug ",
   ];
   const VENDOR_DENY_LIST = [
     "Douglas Sweets",
