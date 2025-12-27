@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.207.0/assert/mod.ts";
+import { assertEquals } from "@std/assert";
 import { htmlToMarkdown } from "../src/format.ts";
 
 Deno.test("converts h tag", () => {

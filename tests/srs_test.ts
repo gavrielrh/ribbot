@@ -1,5 +1,5 @@
 import { createItem, getItemsToReview, updateItem } from "../src/srs.ts";
-import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
+import { assertEquals } from "@std/assert";
 
 Deno.test("End to end", () => {
   // Step 1: User adds a new item
