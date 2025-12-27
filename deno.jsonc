@@ -10,7 +10,7 @@
     "@std/dotenv": "jsr:@std/dotenv@^0.225.6",
     "@std/io": "jsr:@std/io@^0.225.2",
     "discord": "npm:discord.js@14.25.1",
-    "pocketbase": "npm:pocketbase@0.20.3",
+    "pocketbase": "npm:pocketbase@0.26.5",
     "sentry": "npm:@sentry/deno",
     "openai": "npm:openai",
   },

@@ -15,7 +15,6 @@
     "npm:discord.js@14.25.1": "14.25.1",
     "npm:openai@*": "4.47.1",
     "npm:pocketbase@*": "0.26.5",
-    "npm:pocketbase@0.20.3": "0.20.3",
     "npm:pocketbase@0.26.2": "0.26.2",
     "npm:pocketbase@0.26.5": "0.26.5",
     "npm:turndown@7.1.2": "7.1.2"
@@ -425,9 +424,6 @@
     "peek-readable@5.0.0": {
       "integrity": "sha512-YtCKvLUOvwtMGmrniQPdO7MwPjgkFBtFIrmfSbYmYuq3tKDV/mcfAhBth1+C3ru7uXIZasc/pHnb+YDYNkkj4A=="
     },
-    "pocketbase@0.20.3": {
-      "integrity": "sha512-qembHhE7HumDBZpxWgFIbhJPeaCoUIdwhW59xF/VlMR79pDTYz/LaQ4q89y7GczKo4X9actFgFN8hs4dTl0spQ=="
-    },
     "pocketbase@0.26.2": {
       "integrity": "sha512-WA8EOBc3QnSJh8rJ3iYoi9DmmPOMFIgVfAmIGux7wwruUEIzXgvrO4u0W2htfQjGIcyezJkdZOy5Xmh7SxAftw=="
     },
@@ -647,7 +643,7 @@
       "npm:@sentry/deno@*",
       "npm:discord.js@14.25.1",
       "npm:openai@*",
-      "npm:pocketbase@0.20.3"
+      "npm:pocketbase@0.26.5"
     ]
   }
 }
