@@ -54,10 +54,12 @@ function filterTeas(products: Product[]): Product[] {
     "Whisk",
     "Gift Card",
     " Mug ",
+    "Bowl
   ];
   const VENDOR_DENY_LIST = [
     "Douglas Sweets",
     "The Home Pantry",
+    "Urban Tokyo",
   ];
 
   return products

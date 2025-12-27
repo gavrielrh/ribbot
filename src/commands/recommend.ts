@@ -15,8 +15,12 @@ const data = new SlashCommandBuilder()
     option.setName("query").setDescription("Search query").setRequired(true)
   );
 
-const truncate = (input: string, maxLength: number): string =>
-  input.length > maxLength ? `${input.substring(0, maxLength)}...` : input;
+const truncate = (input: string, maxLength: number): string => {
+  const trimmedInput = input.replace(/\s+/g, " ").trim();
+  return trimmedInput.length > maxLength
+    ? `${trimmedInput.substring(0, maxLength)}...`
+    : trimmedInput;
+};
 
 const execute = async (interaction: ChatInputCommandInteraction) => {
   const query = interaction.options.data[0].value as string;
@@ -30,21 +34,27 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     .setAccentColor(0x0099ff);
   recommendations.forEach((recommendation) => {
     const tea = recommendation.tea;
-    const section = new SectionBuilder()
-      .addTextDisplayComponents(
-        (t) => t.setContent(`**${tea.title}**`),
-        (t) => t.setContent(`${truncate(tea.description, 200)}`),
-        (t) => t.setContent(`**In-stock**: ${tea.available}`),
-      );
-    if (tea.thumbnail && tea.thumbnail.length > 0) {
+    if (tea.thumbnail) {
+      const section = new SectionBuilder()
+        .addTextDisplayComponents(
+          (t) => t.setContent(`**${tea.title}**`),
+          (t) => t.setContent(`${truncate(tea.description, 200)}`),
+          (t) => t.setContent(`**In-stock**: ${tea.available}`),
+        );
       section.setThumbnailAccessory(
         (thumbnail) =>
           thumbnail.setDescription(`image of ${tea.title}`).setURL(
             tea.thumbnail!,
           ),
       );
+      container.addSectionComponents(section);
+    } else {
+      container.addTextDisplayComponents(
+        (t) => t.setContent(`**${tea.title}**`),
+        (t) => t.setContent(`${truncate(tea.description, 200)}`),
+        (t) => t.setContent(`**In-stock**: ${tea.available}`),
+      );
     }
-    container.addSectionComponents(section);
     container.addSeparatorComponents((s) => s);
   });
   await interaction.reply({
