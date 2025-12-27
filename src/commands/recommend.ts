@@ -20,14 +20,11 @@ const truncate = (input: string, maxLength: number): string =>
 
 const execute = async (interaction: ChatInputCommandInteraction) => {
   const query = interaction.options.data[0].value as string;
-  // console.log("query", query);
   const teas = await getTeasFromKv();
   const recommender = createTeaRecommender(teas);
   const recommendations = recommender.recommend(query, {
     topN: 5,
   });
-
-  console.log(recommendations);
 
   const container = new ContainerBuilder()
     .setAccentColor(0x0099ff);
@@ -39,7 +36,7 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
         (t) => t.setContent(`${truncate(tea.description, 200)}`),
         (t) => t.setContent(`**In-stock**: ${tea.available}`),
       );
-    if (tea.thumbnail) {
+    if (tea.thumbnail && tea.thumbnail.length > 0) {
       section.setThumbnailAccessory(
         (thumbnail) =>
           thumbnail.setDescription(`image of ${tea.title}`).setURL(
