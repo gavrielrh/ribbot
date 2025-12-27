@@ -1,11 +1,12 @@
 import {
   ChatInputCommandInteraction,
-  EmbedBuilder,
+  ContainerBuilder,
+  MessageFlags,
+  SectionBuilder,
   SlashCommandBuilder,
 } from "discord";
-import OpenAI from "openai";
 import { getTeasFromKv } from "../store.ts";
-import { openAIKey } from "../config.ts";
+import { createTeaRecommender } from "../tea-index.ts";
 
 const data = new SlashCommandBuilder()
   .setName("recommend")
@@ -14,32 +15,44 @@ const data = new SlashCommandBuilder()
     option.setName("query").setDescription("Search query").setRequired(true)
   );
 
-const openai = new OpenAI({
-  apiKey: openAIKey,
-});
+const truncate = (input: string, maxLength: number): string =>
+  input.length > maxLength ? `${input.substring(0, maxLength)}...` : input;
 
 const execute = async (interaction: ChatInputCommandInteraction) => {
   const query = interaction.options.data[0].value as string;
-  console.log("query", query);
+  // console.log("query", query);
   const teas = await getTeasFromKv();
-  const teaDescriptions = teas.map((tea) => tea.description);
-  const recommendations = await recommendationsFromStrings([
-    query,
-    ...teaDescriptions,
-  ], 0);
-  const recommendation = teas[recommendations[0]];
-  const embed = new EmbedBuilder()
-    .setTitle(recommendation.title)
-    .addFields({
-      name: "In-stock",
-      value: recommendation.available ? "yes" : "no",
-    })
-    .setDescription(recommendation.description);
-  if (recommendation.thumbnail) {
-    embed.setThumbnail(recommendation.thumbnail);
-  }
+  const recommender = createTeaRecommender(teas);
+  const recommendations = recommender.recommend(query, {
+    topN: 5,
+  });
+
+  console.log(recommendations);
+
+  const container = new ContainerBuilder()
+    .setAccentColor(0x0099ff);
+  recommendations.forEach((recommendation) => {
+    const tea = recommendation.tea;
+    const section = new SectionBuilder()
+      .addTextDisplayComponents(
+        (t) => t.setContent(`**${tea.title}**`),
+        (t) => t.setContent(`${truncate(tea.description, 200)}`),
+        (t) => t.setContent(`**In-stock**: ${tea.available}`),
+      );
+    if (tea.thumbnail) {
+      section.setThumbnailAccessory(
+        (thumbnail) =>
+          thumbnail.setDescription(`image of ${tea.title}`).setURL(
+            tea.thumbnail!,
+          ),
+      );
+    }
+    container.addSectionComponents(section);
+    container.addSeparatorComponents((s) => s);
+  });
   await interaction.reply({
-    embeds: [embed],
+    components: [container],
+    flags: MessageFlags.IsComponentsV2,
   });
 };
 

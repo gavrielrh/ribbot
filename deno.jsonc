@@ -13,7 +13,6 @@
     "discord": "npm:discord.js@14.25.1",
     "pocketbase": "npm:pocketbase@0.26.5",
     "sentry": "npm:@sentry/deno",
-    "openai": "npm:openai",
   },
   "unstable": ["kv"],
 }
