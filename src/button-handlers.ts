@@ -147,24 +147,29 @@ export async function handleTeaButton(interaction: ButtonInteraction): Promise<b
 
   // For toggle actions, update the original message to swap the button
   if (result.type === "toggle") {
-    try {
-      const rawComponents = interaction.message.components.map((c) => c.toJSON());
-      const updatedComponents = updateButtonsRecursively(rawComponents, result.teaId);
+    const rawComponents = interaction.message.components.map((c) => c.toJSON());
+    const updatedComponents = updateButtonsRecursively(rawComponents, result.teaId);
 
+    try {
       // deno-lint-ignore no-explicit-any
       await interaction.update({ components: updatedComponents as any });
-
-      await interaction.followUp({
-        content: result.content,
-        flags: MessageFlags.Ephemeral,
-      });
     } catch {
-      // If update fails, just reply normally
+      // If update fails, just reply normally and return
       await interaction.reply({
         content: result.content,
         flags: MessageFlags.Ephemeral,
       });
+      return true;
     }
+
+    // Send confirmation as followUp (update already acknowledged the interaction)
+    await interaction.followUp({
+      content: result.content,
+      flags: MessageFlags.Ephemeral,
+    }).catch(() => {
+      // Ignore followUp errors - the button toggle already worked
+    });
+
     return true;
   }
 
