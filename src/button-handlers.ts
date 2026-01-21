@@ -152,7 +152,7 @@ export async function handleTeaButton(interaction: ButtonInteraction): Promise<b
 
     try {
       // deno-lint-ignore no-explicit-any
-      await interaction.update({ components: updatedComponents as any });
+      await interaction.update({ components: updatedComponents as any, flags: MessageFlags.IsComponentsV2 });
     } catch {
       // If update fails, just reply normally and return
       await interaction.reply({
