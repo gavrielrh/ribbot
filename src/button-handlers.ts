@@ -96,6 +96,16 @@ export async function handleTeaButton(
     return false;
   }
 
+  // Only allow the original command user to interact with buttons
+  const originalUserId = interaction.message.interactionMetadata?.user?.id;
+  if (originalUserId && interaction.user.id !== originalUserId) {
+    await interaction.reply({
+      content: "Only the person who ran this command can use these buttons.",
+      flags: MessageFlags.Ephemeral,
+    });
+    return true;
+  }
+
   const [action, teaId] = customId.split(":");
   const user_snowflake = interaction.user.id;
 
@@ -214,21 +224,12 @@ export async function handleTeaButton(
         flags: MessageFlags.IsComponentsV2,
       });
     } catch {
-      // If update fails, just reply normally and return
+      // If update fails, just reply normally
       await interaction.reply({
         content: result.content,
         flags: MessageFlags.Ephemeral,
       });
-      return true;
     }
-
-    // Send confirmation as followUp (update already acknowledged the interaction)
-    await interaction.followUp({
-      content: result.content,
-      flags: MessageFlags.Ephemeral,
-    }).catch(() => {
-      // Ignore followUp errors - the button toggle already worked
-    });
 
     return true;
   }

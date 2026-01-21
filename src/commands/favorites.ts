@@ -130,6 +130,16 @@ const handleButton = async (
     return false;
   }
 
+  // Only allow the original command user to interact with pagination
+  const originalUserId = interaction.message.interactionMetadata?.user?.id;
+  if (originalUserId && interaction.user.id !== originalUserId) {
+    await interaction.reply({
+      content: "Only the person who ran this command can use these buttons.",
+      flags: MessageFlags.Ephemeral,
+    });
+    return true;
+  }
+
   const page = parseInt(customId.split(":")[1], 10);
   const user_snowflake = interaction.user.id;
 
