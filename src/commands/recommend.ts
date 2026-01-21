@@ -8,7 +8,6 @@ import {
   ContainerBuilder,
   MessageFlags,
   SectionBuilder,
-  SeparatorSpacingSize,
   SlashCommandBuilder,
 } from "discord";
 import type { Recommendation } from "../tea-index.ts";
@@ -162,12 +161,11 @@ function buildRecommendContainer(
   container.addTextDisplayComponents((t) =>
     t.setContent(`## Recommendations for "${query}"${pageInfo}`)
   );
-  container.addSeparatorComponents((s) =>
-    s.setSpacing(SeparatorSpacingSize.Small).setDivider(false)
-  );
 
   // Add the recommendation for this page
   for (const recommendation of pageItems) {
+    container.addSeparatorComponents((s) => s.setDivider(true));
+
     const tea = recommendation.tea;
     const thumbnailUrl = tea.thumbnail;
     const content = formatTeaContent(recommendation);
@@ -215,6 +213,7 @@ function buildRecommendContainer(
 
   // Add pagination buttons if needed
   if (totalPages > 1) {
+    container.addSeparatorComponents((s) => s.setDivider(true));
     // Encode query in customId (truncate if needed to fit within Discord's 100 char limit)
     const encodedQuery = encodeURIComponent(query).slice(0, 70);
     const prevButton = new ButtonBuilder()

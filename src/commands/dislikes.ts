@@ -37,6 +37,7 @@ export function buildDislikesContainer(
   );
 
   for (const tea of pageItems) {
+    container.addSeparatorComponents((s) => s.setDivider(true));
     const teaId = stableId(tea.title);
 
     // Tea info line
@@ -57,12 +58,11 @@ export function buildDislikesContainer(
     const actionRow = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(unhideButton, viewButton);
     container.addActionRowComponents(actionRow);
-
-    container.addSeparatorComponents((s) => s.setDivider(true));
   }
 
   // Add pagination buttons if needed
   if (totalPages > 1) {
+    container.addSeparatorComponents((s) => s.setDivider(true));
     const prevButton = new ButtonBuilder()
       .setCustomId(`dislikes_page:${page - 1}`)
       .setLabel("Previous")
