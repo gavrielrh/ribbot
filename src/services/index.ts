@@ -1,3 +1,11 @@
-export { ShopifyClient, ShopifyClientLive, productHasTag } from "./ShopifyClient.ts";
-export { TeaStore, TeaStoreLive, type Tea } from "./TeaStore.ts";
-export { UserTeaService, UserTeaServiceLive, type UserTea } from "./UserTeaService.ts";
+export {
+  productHasTag,
+  ShopifyClient,
+  ShopifyClientLive,
+} from "./ShopifyClient.ts";
+export { type Tea, TeaStore, TeaStoreLive } from "./TeaStore.ts";
+export {
+  type UserTea,
+  UserTeaService,
+  UserTeaServiceLive,
+} from "./UserTeaService.ts";

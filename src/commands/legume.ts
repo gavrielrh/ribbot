@@ -26,10 +26,10 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     getPlantFamilies(plantName).pipe(
       Effect.catchAll((error) =>
         Effect.logError("Plant family lookup failed", { error }).pipe(
-          Effect.map(() => Option.none())
+          Effect.map(() => Option.none()),
         )
-      )
-    )
+      ),
+    ),
   );
 
   if (Option.isNone(resultOption)) {

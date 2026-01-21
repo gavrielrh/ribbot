@@ -19,12 +19,16 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
   });
 
   const count = await AppRuntime.runPromise(program).catch(async (error) => {
-    await interaction.editReply(`Failed to flush teas: ${error.message || error}`);
+    await interaction.editReply(
+      `Failed to flush teas: ${error.message || error}`,
+    );
     return null;
   });
 
   if (count !== null) {
-    await interaction.editReply(`Teas flushed successfully! (${count} teas loaded)`);
+    await interaction.editReply(
+      `Teas flushed successfully! (${count} teas loaded)`,
+    );
   }
 };
 

@@ -1,8 +1,8 @@
-import { assertEquals, assertArrayIncludes } from "@std/assert";
+import { assertArrayIncludes, assertEquals } from "@std/assert";
 import {
-  TYPE_DENY_LIST,
   TAGS_DENY_LIST,
   TITLE_DENY_LIST,
+  TYPE_DENY_LIST,
   VENDOR_DENY_LIST,
 } from "./tea-filters.ts";
 

@@ -3,22 +3,22 @@ import { Schema } from "effect";
 
 const EnvSchema = Schema.Struct({
   DISCORD_TOKEN: Schema.String.pipe(
-    Schema.nonEmptyString({ message: () => "DISCORD_TOKEN is required" })
+    Schema.nonEmptyString({ message: () => "DISCORD_TOKEN is required" }),
   ),
   DISCORD_CLIENT_ID: Schema.String.pipe(
-    Schema.nonEmptyString({ message: () => "DISCORD_CLIENT_ID is required" })
+    Schema.nonEmptyString({ message: () => "DISCORD_CLIENT_ID is required" }),
   ),
   DISCORD_GUILD_ID: Schema.String.pipe(
-    Schema.nonEmptyString({ message: () => "DISCORD_GUILD_ID is required" })
+    Schema.nonEmptyString({ message: () => "DISCORD_GUILD_ID is required" }),
   ),
   POCKETBASE_URL: Schema.String.pipe(
-    Schema.nonEmptyString({ message: () => "POCKETBASE_URL is required" })
+    Schema.nonEmptyString({ message: () => "POCKETBASE_URL is required" }),
   ),
   POCKETBASE_USERNAME: Schema.String.pipe(
-    Schema.nonEmptyString({ message: () => "POCKETBASE_USERNAME is required" })
+    Schema.nonEmptyString({ message: () => "POCKETBASE_USERNAME is required" }),
   ),
   POCKETBASE_PASSWORD: Schema.String.pipe(
-    Schema.nonEmptyString({ message: () => "POCKETBASE_PASSWORD is required" })
+    Schema.nonEmptyString({ message: () => "POCKETBASE_PASSWORD is required" }),
   ),
   SENTRY_DSN: Schema.optional(Schema.String),
 });

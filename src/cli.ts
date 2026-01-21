@@ -10,9 +10,9 @@
 import { createTeaRecommender, type Recommendation } from "./tea-index.ts";
 import { getAllTags } from "./tea-tags.ts";
 import {
-  TYPE_DENY_LIST,
   TAGS_DENY_LIST,
   TITLE_DENY_LIST,
+  TYPE_DENY_LIST,
   VENDOR_DENY_LIST,
 } from "./tea-filters.ts";
 import { htmlToMarkdown } from "./format.ts";
@@ -23,22 +23,34 @@ const BASE_URL = "https://happyearthtea.com";
 function productHasTag(product: any, tag: string): boolean {
   if (!product.tags) return false;
   if (typeof product.tags === "string") return product.tags.includes(tag);
-  if (Array.isArray(product.tags)) return product.tags.some((t: string) => t === tag);
+  if (Array.isArray(product.tags)) {
+    return product.tags.some((t: string) => t === tag);
+  }
   return false;
 }
 
 function filterTeas(products: any[]): any[] {
   return products
-    .filter((product) => !TITLE_DENY_LIST.some((title) => product.title?.includes(title)))
-    .filter((product) => !TAGS_DENY_LIST.some((tag) => productHasTag(product, tag)))
-    .filter((product) => !TYPE_DENY_LIST.some((type) => product.product_type === type))
-    .filter((product) => !VENDOR_DENY_LIST.some((vendor) => product.vendor === vendor));
+    .filter((product) =>
+      !TITLE_DENY_LIST.some((title) => product.title?.includes(title))
+    )
+    .filter((product) =>
+      !TAGS_DENY_LIST.some((tag) => productHasTag(product, tag))
+    )
+    .filter((product) =>
+      !TYPE_DENY_LIST.some((type) => product.product_type === type)
+    )
+    .filter((product) =>
+      !VENDOR_DENY_LIST.some((vendor) => product.vendor === vendor)
+    );
 }
 
 function getThumbnail(product: any): string | null {
   const variants = product.variants;
   if (variants && Array.isArray(variants)) {
-    const variantWithSource = variants.find((variant: any) => variant.featured_image?.src);
+    const variantWithSource = variants.find((variant: any) =>
+      variant.featured_image?.src
+    );
     if (variantWithSource) {
       return variantWithSource.featured_image.src;
     }
@@ -153,8 +165,11 @@ async function runValidate() {
 
   for (const tea of teas) {
     // Check if tea can be found by its title
-    const byTitle = recommender.recommend(tea.title, { topN: 5, onlyAvailable: false });
-    const foundByTitle = byTitle.some(r => r.tea.title === tea.title);
+    const byTitle = recommender.recommend(tea.title, {
+      topN: 5,
+      onlyAvailable: false,
+    });
+    const foundByTitle = byTitle.some((r) => r.tea.title === tea.title);
 
     if (!foundByTitle) {
       issues.push(`NOT FOUND BY TITLE: ${tea.title}`);
@@ -162,10 +177,15 @@ async function runValidate() {
 
     // Check if tea can be found by its type
     if (tea.productType) {
-      const byType = recommender.recommend(tea.productType, { topN: 20, onlyAvailable: false });
-      const foundByType = byType.some(r => r.tea.title === tea.title);
+      const byType = recommender.recommend(tea.productType, {
+        topN: 20,
+        onlyAvailable: false,
+      });
+      const foundByType = byType.some((r) => r.tea.title === tea.title);
       if (!foundByType) {
-        issues.push(`NOT IN TOP 20 FOR TYPE "${tea.productType}": ${tea.title}`);
+        issues.push(
+          `NOT IN TOP 20 FOR TYPE "${tea.productType}": ${tea.title}`,
+        );
       }
     }
 
@@ -181,13 +201,20 @@ async function runValidate() {
 
   for (const [tag, count] of tagCoverage.entries()) {
     if (count >= 3) { // Only check tags with 3+ teas
-      const results = recommender.recommend(tag, { topN: 10, onlyAvailable: false });
-      const matchCount = results.filter(r => r.tea.tags.includes(tag)).length;
+      const results = recommender.recommend(tag, {
+        topN: 10,
+        onlyAvailable: false,
+      });
+      const matchCount = results.filter((r) => r.tea.tags.includes(tag)).length;
 
       if (matchCount === 0) {
-        tagIssues.push(`TAG "${tag}" (${count} teas): No matches in top 10 results`);
+        tagIssues.push(
+          `TAG "${tag}" (${count} teas): No matches in top 10 results`,
+        );
       } else if (matchCount < Math.min(3, count)) {
-        tagIssues.push(`TAG "${tag}" (${count} teas): Only ${matchCount} matches in top 10`);
+        tagIssues.push(
+          `TAG "${tag}" (${count} teas): Only ${matchCount} matches in top 10`,
+        );
       }
     }
   }
@@ -219,8 +246,16 @@ async function runValidate() {
   console.log("\nSUMMARY:");
   console.log(`  Total teas: ${teas.length}`);
   console.log(`  Total unique tags: ${tagCoverage.size}`);
-  console.log(`  Title search issues: ${issues.filter(i => i.startsWith("NOT FOUND")).length}`);
-  console.log(`  Type search issues: ${issues.filter(i => i.startsWith("NOT IN TOP")).length}`);
+  console.log(
+    `  Title search issues: ${
+      issues.filter((i) => i.startsWith("NOT FOUND")).length
+    }`,
+  );
+  console.log(
+    `  Type search issues: ${
+      issues.filter((i) => i.startsWith("NOT IN TOP")).length
+    }`,
+  );
   console.log(`  Tag search issues: ${tagIssues.length}`);
 }
 
@@ -256,7 +291,9 @@ const args = Deno.args.slice(1);
 switch (command) {
   case "recommend":
     if (args.length === 0) {
-      console.log("Usage: deno run --allow-net src/cli.ts recommend <query> [topN]");
+      console.log(
+        "Usage: deno run --allow-net src/cli.ts recommend <query> [topN]",
+      );
       Deno.exit(1);
     }
     await runRecommend(args[0], parseInt(args[1]) || 5);
@@ -279,8 +316,12 @@ switch (command) {
     console.log("  tags                      - Show tag coverage report");
     console.log("");
     console.log("Examples:");
-    console.log('  deno run --allow-net src/cli.ts recommend "floral green tea"');
-    console.log('  deno run --allow-net src/cli.ts recommend "relaxing bedtime" 10');
+    console.log(
+      '  deno run --allow-net src/cli.ts recommend "floral green tea"',
+    );
+    console.log(
+      '  deno run --allow-net src/cli.ts recommend "relaxing bedtime" 10',
+    );
     console.log("  deno run --allow-net src/cli.ts validate");
     Deno.exit(0);
 }

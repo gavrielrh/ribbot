@@ -1,7 +1,11 @@
 import { Context, Effect, Layer, Option } from "effect";
 import PocketBase from "pocketbase";
 import { PocketBaseError } from "../errors.ts";
-import { pocketbaseUrl, pocketbaseUsername, pocketbasePassword } from "../config.ts";
+import {
+  pocketbasePassword,
+  pocketbaseUrl,
+  pocketbaseUsername,
+} from "../config.ts";
 
 /** A user's preference record for a specific tea. */
 export type UserTea = {
@@ -93,7 +97,9 @@ export const UserTeaServiceLive = Layer.effect(
       Effect.tryPromise({
         try: async () => {
           const record = (await pb.collection("user_teas").getFirstListItem(
-            `user_snowflake="${user_snowflake}" && tea_title="${escapeString(tea_title)}"`,
+            `user_snowflake="${user_snowflake}" && tea_title="${
+              escapeString(tea_title)
+            }"`,
           )) as UserTea;
           record.tea_title = unescapeString(tea_title);
           return Option.some(record);
@@ -111,11 +117,16 @@ export const UserTeaServiceLive = Layer.effect(
       status: "like" | "dislike";
     }): Effect.Effect<void, PocketBaseError> =>
       Effect.gen(function* () {
-        const userTeaOption = yield* getUserTeaImpl({ user_snowflake, tea_title });
+        const userTeaOption = yield* getUserTeaImpl({
+          user_snowflake,
+          tea_title,
+        });
         if (Option.isSome(userTeaOption)) {
           yield* Effect.tryPromise({
             try: () =>
-              pb.collection("user_teas").update(userTeaOption.value.id, { status }),
+              pb.collection("user_teas").update(userTeaOption.value.id, {
+                status,
+              }),
             catch: (error) =>
               new PocketBaseError({
                 message: String(error),
@@ -150,7 +161,9 @@ export const UserTeaServiceLive = Layer.effect(
               filter: `user_snowflake = "${user_snowflake}" && status="like"`,
             });
             return records.map((record) =>
-              unescapeString((record as unknown as { tea_title: string }).tea_title)
+              unescapeString(
+                (record as unknown as { tea_title: string }).tea_title,
+              )
             );
           },
           catch: (error) =>
@@ -164,10 +177,13 @@ export const UserTeaServiceLive = Layer.effect(
         Effect.tryPromise({
           try: async () => {
             const records = await pb.collection("user_teas").getFullList({
-              filter: `user_snowflake = "${user_snowflake}" && status="dislike"`,
+              filter:
+                `user_snowflake = "${user_snowflake}" && status="dislike"`,
             });
             return records.map((record) =>
-              unescapeString((record as unknown as { tea_title: string }).tea_title)
+              unescapeString(
+                (record as unknown as { tea_title: string }).tea_title,
+              )
             );
           },
           catch: (error) =>
@@ -179,14 +195,22 @@ export const UserTeaServiceLive = Layer.effect(
 
       isFavoriteTea: ({ user_snowflake, tea_title }) =>
         Effect.gen(function* () {
-          const userTeaOption = yield* getUserTeaImpl({ user_snowflake, tea_title });
-          return Option.isSome(userTeaOption) && userTeaOption.value.status === "like";
+          const userTeaOption = yield* getUserTeaImpl({
+            user_snowflake,
+            tea_title,
+          });
+          return Option.isSome(userTeaOption) &&
+            userTeaOption.value.status === "like";
         }),
 
       isDislikedTea: ({ user_snowflake, tea_title }) =>
         Effect.gen(function* () {
-          const userTeaOption = yield* getUserTeaImpl({ user_snowflake, tea_title });
-          return Option.isSome(userTeaOption) && userTeaOption.value.status === "dislike";
+          const userTeaOption = yield* getUserTeaImpl({
+            user_snowflake,
+            tea_title,
+          });
+          return Option.isSome(userTeaOption) &&
+            userTeaOption.value.status === "dislike";
         }),
 
       setFavoriteTea: ({ user_snowflake, tea_title }) =>
@@ -197,10 +221,14 @@ export const UserTeaServiceLive = Layer.effect(
 
       clearTeaStatus: ({ user_snowflake, tea_title }) =>
         Effect.gen(function* () {
-          const userTeaOption = yield* getUserTeaImpl({ user_snowflake, tea_title });
+          const userTeaOption = yield* getUserTeaImpl({
+            user_snowflake,
+            tea_title,
+          });
           if (Option.isSome(userTeaOption)) {
             yield* Effect.tryPromise({
-              try: () => pb.collection("user_teas").delete(userTeaOption.value.id),
+              try: () =>
+                pb.collection("user_teas").delete(userTeaOption.value.id),
               catch: (error) =>
                 new PocketBaseError({
                   message: String(error),

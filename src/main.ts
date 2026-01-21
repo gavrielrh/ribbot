@@ -6,7 +6,7 @@ import { sentryDsn, token } from "./config.ts";
 import { TeaStore } from "./services/index.ts";
 import { registerCommands } from "./deploy-commands.ts";
 import { AppRuntime, startScheduledRefresh } from "./runtime.ts";
-import { handleTeaButton, handleLegacyTeaButton } from "./button-handlers.ts";
+import { handleLegacyTeaButton, handleTeaButton } from "./button-handlers.ts";
 
 Sentry.init({
   dsn: sentryDsn,
@@ -24,7 +24,9 @@ for await (const file of Deno.readDir(`./src/commands`)) {
     client.commands.set(command.data.name, command);
   } else {
     await AppRuntime.runPromise(
-      Effect.logWarning(`The command at ${file.name} is missing a required "data" or "execute" property.`)
+      Effect.logWarning(
+        `The command at ${file.name} is missing a required "data" or "execute" property.`,
+      ),
     );
   }
 }
@@ -42,7 +44,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   if (!command) {
     await AppRuntime.runPromise(
-      Effect.logError(`No command matching ${interaction.commandName} was found.`)
+      Effect.logError(
+        `No command matching ${interaction.commandName} was found.`,
+      ),
     );
     return;
   }
@@ -51,9 +55,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await command.execute(interaction);
   } catch (error) {
     await AppRuntime.runPromise(
-      Effect.logError(`Error executing command "${interaction.commandName}"`, { error })
+      Effect.logError(`Error executing command "${interaction.commandName}"`, {
+        error,
+      }),
     );
-    const errorMessage = `An error occurred while executing /${interaction.commandName}. Please try again later.`;
+    const errorMessage =
+      `An error occurred while executing /${interaction.commandName}. Please try again later.`;
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
         content: errorMessage,
@@ -77,7 +84,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   if (!command || !command.autocomplete) {
     await AppRuntime.runPromise(
-      Effect.logError(`No autocomplete handler for command ${interaction.commandName}`)
+      Effect.logError(
+        `No autocomplete handler for command ${interaction.commandName}`,
+      ),
     );
     return;
   }
@@ -85,7 +94,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     await command.autocomplete(interaction);
   } catch (error) {
-    await AppRuntime.runPromise(Effect.logError("Autocomplete error", { error }));
+    await AppRuntime.runPromise(
+      Effect.logError("Autocomplete error", { error }),
+    );
   }
 });
 
@@ -114,9 +125,9 @@ const initProgram = Effect.gen(function* () {
   const teas = yield* teaStore.getTeas().pipe(
     Effect.catchAll((error) => {
       return Effect.logError(`Failed to load initial teas: ${error}`).pipe(
-        Effect.flatMap(() => Effect.succeed([] as const))
+        Effect.flatMap(() => Effect.succeed([] as const)),
       );
-    })
+    }),
   );
 
   yield* Effect.logInfo(`Loaded ${teas.length} teas into cache`);
@@ -129,14 +140,18 @@ const initProgram = Effect.gen(function* () {
 await AppRuntime.runPromise(initProgram);
 
 const shutdown = async (signal: string) => {
-  await AppRuntime.runPromise(Effect.logInfo(`Received ${signal}, shutting down gracefully...`));
+  await AppRuntime.runPromise(
+    Effect.logInfo(`Received ${signal}, shutting down gracefully...`),
+  );
 
   try {
     client.destroy();
     await AppRuntime.runPromise(Effect.logInfo("Discord client disconnected"));
 
     await AppRuntime.dispose();
-    await AppRuntime.runPromise(Effect.logInfo("Runtime disposed")).catch(() => {});
+    await AppRuntime.runPromise(Effect.logInfo("Runtime disposed")).catch(
+      () => {},
+    );
 
     Deno.exit(0);
   } catch (error) {

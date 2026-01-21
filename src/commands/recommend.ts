@@ -90,8 +90,12 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     const userTeaService = yield* UserTeaService;
 
     // Get user's disliked and favorite teas
-    const dislikedTeas = yield* userTeaService.getDislikedTeas({ user_snowflake });
-    const favoriteTeas = yield* userTeaService.getFavoriteTeas({ user_snowflake });
+    const dislikedTeas = yield* userTeaService.getDislikedTeas({
+      user_snowflake,
+    });
+    const favoriteTeas = yield* userTeaService.getFavoriteTeas({
+      user_snowflake,
+    });
 
     // Get more recommendations than needed to account for filtering
     const allRecommendations = yield* teaStore.recommend(query, { topN: 15 });
@@ -108,10 +112,13 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     program.pipe(
       Effect.catchAll((error) =>
         Effect.logError("Failed to get tea recommendations", { error }).pipe(
-          Effect.map(() => ({ recommendations: [] as Recommendation[], favoriteTeas: [] as string[] }))
+          Effect.map(() => ({
+            recommendations: [] as Recommendation[],
+            favoriteTeas: [] as string[],
+          })),
         )
-      )
-    )
+      ),
+    ),
   );
 
   const { recommendations, favoriteTeas } = result;
@@ -153,15 +160,15 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     const isFavorite = favoriteTeas.includes(tea.title);
     const favoriteButton = isFavorite
       ? new ButtonBuilder()
-          .setCustomId(`unfavorite_tea:${tea.id}`)
-          .setLabel("Unfavorite")
-          .setEmoji("💔")
-          .setStyle(ButtonStyle.Secondary)
+        .setCustomId(`unfavorite_tea:${tea.id}`)
+        .setLabel("Unfavorite")
+        .setEmoji("💔")
+        .setStyle(ButtonStyle.Secondary)
       : new ButtonBuilder()
-          .setCustomId(`like_tea:${tea.id}`)
-          .setLabel("Favorite")
-          .setEmoji("⭐")
-          .setStyle(ButtonStyle.Success);
+        .setCustomId(`like_tea:${tea.id}`)
+        .setLabel("Favorite")
+        .setEmoji("⭐")
+        .setStyle(ButtonStyle.Success);
     const dislikeButton = new ButtonBuilder()
       .setCustomId(`dislike_tea:${tea.id}`)
       .setLabel("Hide")

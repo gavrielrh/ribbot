@@ -36,7 +36,9 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     const teaStore = yield* TeaStore;
     const userTeaService = yield* UserTeaService;
     const tea = yield* teaStore.getTea(title);
-    const favoriteTeas = yield* userTeaService.getFavoriteTeas({ user_snowflake });
+    const favoriteTeas = yield* userTeaService.getFavoriteTeas({
+      user_snowflake,
+    });
     const isFavorite = favoriteTeas.includes(tea.title);
     return { tea, isFavorite };
   });
@@ -82,15 +84,15 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
   // Add action buttons
   const favoriteButton = isFavorite
     ? new ButtonBuilder()
-        .setCustomId(`unfavorite_tea:${teaId}`)
-        .setLabel("Unfavorite")
-        .setEmoji("💔")
-        .setStyle(ButtonStyle.Secondary)
+      .setCustomId(`unfavorite_tea:${teaId}`)
+      .setLabel("Unfavorite")
+      .setEmoji("💔")
+      .setStyle(ButtonStyle.Secondary)
     : new ButtonBuilder()
-        .setCustomId(`like_tea:${teaId}`)
-        .setLabel("Favorite")
-        .setEmoji("⭐")
-        .setStyle(ButtonStyle.Success);
+      .setCustomId(`like_tea:${teaId}`)
+      .setLabel("Favorite")
+      .setEmoji("⭐")
+      .setStyle(ButtonStyle.Success);
   const dislikeButton = new ButtonBuilder()
     .setCustomId(`dislike_tea:${teaId}`)
     .setLabel("Hide")
@@ -122,10 +124,10 @@ const autocomplete = async (interaction: AutocompleteInteraction) => {
     program.pipe(
       Effect.catchAll((error) =>
         Effect.logError("Autocomplete error fetching teas", { error }).pipe(
-          Effect.map(() => [] as const)
+          Effect.map(() => [] as const),
         )
-      )
-    )
+      ),
+    ),
   );
   const choices = teas.map((tea) => tea.title);
   const filtered = choices.filter((choice) =>

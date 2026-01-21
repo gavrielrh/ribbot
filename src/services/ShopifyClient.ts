@@ -1,6 +1,11 @@
 import { Context, Duration, Effect, Layer, Schedule } from "effect";
-import { NetworkError, ShopifyError, TimeoutError, ParseError } from "../errors.ts";
-import { Product, decodeProductsResponse } from "../schemas/shopify.ts";
+import {
+  NetworkError,
+  ParseError,
+  ShopifyError,
+  TimeoutError,
+} from "../errors.ts";
+import { decodeProductsResponse, Product } from "../schemas/shopify.ts";
 
 const MAX_PRODUCTS_PER_PAGE = 250;
 
@@ -19,11 +24,17 @@ export class ShopifyClient extends Context.Tag("ShopifyClient")<
     getProducts: (
       baseUrl: string,
       page?: number,
-    ) => Effect.Effect<readonly Product[], ShopifyError | ParseError | NetworkError | TimeoutError>;
+    ) => Effect.Effect<
+      readonly Product[],
+      ShopifyError | ParseError | NetworkError | TimeoutError
+    >;
     /** Fetches all products by paginating through the entire catalog. */
     getAllProducts: (
       baseUrl: string,
-    ) => Effect.Effect<readonly Product[], ShopifyError | ParseError | NetworkError | TimeoutError>;
+    ) => Effect.Effect<
+      readonly Product[],
+      ShopifyError | ParseError | NetworkError | TimeoutError
+    >;
   }
 >() {}
 
@@ -46,16 +57,19 @@ const fetchWithRetry = (
           message: "Request timed out after 30 seconds",
           url,
         }),
-      )
-    ),
+      )),
   );
 
 const getProductsImpl = (
   baseUrl: string,
   page = 1,
-): Effect.Effect<readonly Product[], ShopifyError | ParseError | NetworkError | TimeoutError> =>
+): Effect.Effect<
+  readonly Product[],
+  ShopifyError | ParseError | NetworkError | TimeoutError
+> =>
   Effect.gen(function* () {
-    const url = `${baseUrl}/products.json?page=${page}&limit=${MAX_PRODUCTS_PER_PAGE}`;
+    const url =
+      `${baseUrl}/products.json?page=${page}&limit=${MAX_PRODUCTS_PER_PAGE}`;
 
     yield* Effect.logDebug(`Fetching products from ${url}`);
 
@@ -81,14 +95,19 @@ const getProductsImpl = (
 
     const decoded = yield* decodeProductsResponse(json);
 
-    yield* Effect.logDebug(`Fetched ${decoded.products.length} products from page ${page}`);
+    yield* Effect.logDebug(
+      `Fetched ${decoded.products.length} products from page ${page}`,
+    );
 
     return decoded.products;
   });
 
 const getAllProductsImpl = (
   baseUrl: string,
-): Effect.Effect<readonly Product[], ShopifyError | ParseError | NetworkError | TimeoutError> =>
+): Effect.Effect<
+  readonly Product[],
+  ShopifyError | ParseError | NetworkError | TimeoutError
+> =>
   Effect.gen(function* () {
     const allProducts: Product[] = [];
     let page = 1;

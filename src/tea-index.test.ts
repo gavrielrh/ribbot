@@ -5,7 +5,8 @@ import type { Tea } from "./services/TeaStore.ts";
 const mockTeas: Tea[] = [
   {
     title: "Earl Grey Supreme",
-    description: "A bold and aromatic black tea with bergamot notes. Full-bodied and smooth.",
+    description:
+      "A bold and aromatic black tea with bergamot notes. Full-bodied and smooth.",
     thumbnail: null,
     available: true,
     productType: "Black Tea",
@@ -13,7 +14,8 @@ const mockTeas: Tea[] = [
   },
   {
     title: "Jasmine Green",
-    description: "A delicate and flowery green tea with jasmine blossoms. Light and refreshing.",
+    description:
+      "A delicate and flowery green tea with jasmine blossoms. Light and refreshing.",
     thumbnail: null,
     available: true,
     productType: "Green Tea",
@@ -21,7 +23,8 @@ const mockTeas: Tea[] = [
   },
   {
     title: "Chamomile Dreams",
-    description: "A calming herbal tea with chamomile flowers. Smooth and soothing for bedtime.",
+    description:
+      "A calming herbal tea with chamomile flowers. Smooth and soothing for bedtime.",
     thumbnail: null,
     available: true,
     productType: "Herbal Tea",
@@ -29,7 +32,8 @@ const mockTeas: Tea[] = [
   },
   {
     title: "Assam Bold",
-    description: "A malty and robust black tea from Assam. Strong and astringent with brisk notes.",
+    description:
+      "A malty and robust black tea from Assam. Strong and astringent with brisk notes.",
     thumbnail: null,
     available: true,
     productType: "Black Tea",
@@ -84,7 +88,10 @@ Deno.test("recommend respects type constraints for green tea", () => {
 
   if (results.length > 0) {
     const topResult = results[0];
-    assertEquals(topResult.tea.productType?.toLowerCase().includes("green"), true);
+    assertEquals(
+      topResult.tea.productType?.toLowerCase().includes("green"),
+      true,
+    );
   }
 });
 
@@ -94,7 +101,10 @@ Deno.test("recommend handles bedtime/herbal queries", () => {
 
   if (results.length > 0) {
     const topResult = results[0];
-    assertEquals(topResult.tea.productType?.toLowerCase().includes("herbal"), true);
+    assertEquals(
+      topResult.tea.productType?.toLowerCase().includes("herbal"),
+      true,
+    );
   }
 });
 

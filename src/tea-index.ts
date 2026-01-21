@@ -92,10 +92,39 @@ const NEGATION_WORDS = new Set(["no", "not", "without", "avoid", "non"]);
 
 // Words to ignore in queries
 const STOPWORDS = new Set([
-  "a", "an", "the", "and", "or", "but", "is", "are", "was", "were",
-  "i", "me", "my", "want", "looking", "for", "something", "like",
-  "would", "please", "can", "you", "recommend", "suggest", "find",
-  "tea", "teas", "drink", "have", "get", "try", "need", "some",
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "but",
+  "is",
+  "are",
+  "was",
+  "were",
+  "i",
+  "me",
+  "my",
+  "want",
+  "looking",
+  "for",
+  "something",
+  "like",
+  "would",
+  "please",
+  "can",
+  "you",
+  "recommend",
+  "suggest",
+  "find",
+  "tea",
+  "teas",
+  "drink",
+  "have",
+  "get",
+  "try",
+  "need",
+  "some",
 ]);
 
 // ============================================================================
@@ -149,7 +178,9 @@ function buildIndex(teas: Tea[]): Index {
 
   const indexed = teas.map((tea) => {
     const tagsText = tea.tags.join(" ");
-    const text = normalize(`${tea.title} ${tea.description} ${tea.productType ?? ""} ${tagsText}`);
+    const text = normalize(
+      `${tea.title} ${tea.description} ${tea.productType ?? ""} ${tagsText}`,
+    );
     const tokens = new Set(tokenize(text));
 
     for (const token of tokens) {
@@ -243,7 +274,13 @@ function scoreTea(
   tea: IndexedTea,
   query: ParsedQuery,
   idf: Map<string, number>,
-): { score: number; matched: string[]; avoided: string[]; reasons: string[]; matchedTags: string[] } {
+): {
+  score: number;
+  matched: string[];
+  avoided: string[];
+  reasons: string[];
+  matchedTags: string[];
+} {
   let score = 0;
   const matched: string[] = [];
   const avoided: string[] = [];
@@ -259,8 +296,7 @@ function scoreTea(
       score += termIdf * 2;
       matched.push(term);
       reasons.push(`Matched: ${term}`);
-    }
-    // Substring match (for compound words)
+    } // Substring match (for compound words)
     else if (tea.text.includes(term)) {
       score += termIdf;
       matched.push(term);
@@ -316,7 +352,8 @@ export function createTeaRecommender(teas: Tea[]) {
 
   return {
     index,
-    recommend: (query: string, opts?: RecommendOpts) => recommend(index, query, opts),
+    recommend: (query: string, opts?: RecommendOpts) =>
+      recommend(index, query, opts),
   };
 }
 
@@ -394,7 +431,9 @@ function recommend(
         positiveMatched: r.matched,
         positiveMissed: parsed.wantTerms.filter((t) => !r.matched.includes(t)),
         negativeHit: r.avoided,
-        negativeRespected: parsed.avoidTerms.filter((t) => !r.avoided.includes(t)),
+        negativeRespected: parsed.avoidTerms.filter((t) =>
+          !r.avoided.includes(t)
+        ),
         orSatisfied: [],
       },
       constraints: parsed.typeConstraints.map((t) => `type:${t}`),

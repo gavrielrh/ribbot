@@ -1,5 +1,18 @@
-import { Effect, Layer, Logger, LogLevel, ManagedRuntime, Schedule, Duration, Fiber } from "effect";
-import { ShopifyClientLive, TeaStoreLive, UserTeaServiceLive, TeaStore } from "./services/index.ts";
+import {
+  Duration,
+  Effect,
+  Layer,
+  Logger,
+  LogLevel,
+  ManagedRuntime,
+  Schedule,
+} from "effect";
+import {
+  ShopifyClientLive,
+  TeaStore,
+  TeaStoreLive,
+  UserTeaServiceLive,
+} from "./services/index.ts";
 
 const ServicesLive = TeaStoreLive.pipe(
   Layer.provideMerge(ShopifyClientLive),
@@ -24,9 +37,9 @@ export const startScheduledRefresh = Effect.gen(function* () {
     const teas = yield* teaStore.refreshTeas().pipe(
       Effect.catchAll((error) => {
         return Effect.logError(`Failed to refresh teas: ${error}`).pipe(
-          Effect.flatMap(() => Effect.succeed([] as const))
+          Effect.flatMap(() => Effect.succeed([] as const)),
         );
-      })
+      }),
     );
     yield* Effect.logInfo(`Scheduled refresh complete: ${teas.length} teas`);
   });

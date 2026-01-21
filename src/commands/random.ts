@@ -47,8 +47,12 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     const userTeaService = yield* UserTeaService;
 
     const teas = yield* teaStore.getTeas();
-    const disliked_teas = yield* userTeaService.getDislikedTeas({ user_snowflake });
-    const favoriteTeas = yield* userTeaService.getFavoriteTeas({ user_snowflake });
+    const disliked_teas = yield* userTeaService.getDislikedTeas({
+      user_snowflake,
+    });
+    const favoriteTeas = yield* userTeaService.getFavoriteTeas({
+      user_snowflake,
+    });
 
     let toSelectFrom = [...teas].filter((tea) =>
       tea && tea.available && !disliked_teas.includes(tea.title)
@@ -107,15 +111,15 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
   // Add action buttons
   const favoriteButton = isFavorite
     ? new ButtonBuilder()
-        .setCustomId(`unfavorite_tea:${teaId}`)
-        .setLabel("Unfavorite")
-        .setEmoji("💔")
-        .setStyle(ButtonStyle.Secondary)
+      .setCustomId(`unfavorite_tea:${teaId}`)
+      .setLabel("Unfavorite")
+      .setEmoji("💔")
+      .setStyle(ButtonStyle.Secondary)
     : new ButtonBuilder()
-        .setCustomId(`like_tea:${teaId}`)
-        .setLabel("Favorite")
-        .setEmoji("⭐")
-        .setStyle(ButtonStyle.Success);
+      .setCustomId(`like_tea:${teaId}`)
+      .setLabel("Favorite")
+      .setEmoji("⭐")
+      .setStyle(ButtonStyle.Success);
   const dislikeButton = new ButtonBuilder()
     .setCustomId(`dislike_tea:${teaId}`)
     .setLabel("Hide")

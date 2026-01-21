@@ -1,13 +1,24 @@
-import { Context, Effect, Layer, Option, Cache, Duration } from "effect";
-import { TeaNotFoundError, ShopifyError, NetworkError, TimeoutError, ParseError } from "../errors.ts";
-import { ShopifyClient, productHasTag } from "./ShopifyClient.ts";
+import { Cache, Context, Duration, Effect, Layer, Option } from "effect";
+import {
+  NetworkError,
+  ParseError,
+  ShopifyError,
+  TeaNotFoundError,
+  TimeoutError,
+} from "../errors.ts";
+import { productHasTag, ShopifyClient } from "./ShopifyClient.ts";
 import { Product } from "../schemas/shopify.ts";
 import { htmlToMarkdown } from "../format.ts";
-import { createTeaRecommender, stableId, type Recommendation, type RecommendOpts } from "../tea-index.ts";
 import {
-  TYPE_DENY_LIST,
+  createTeaRecommender,
+  type Recommendation,
+  type RecommendOpts,
+  stableId,
+} from "../tea-index.ts";
+import {
   TAGS_DENY_LIST,
   TITLE_DENY_LIST,
+  TYPE_DENY_LIST,
   VENDOR_DENY_LIST,
 } from "../tea-filters.ts";
 import { getAllTags } from "../tea-tags.ts";
@@ -82,17 +93,39 @@ export class TeaStore extends Context.Tag("TeaStore")<
   TeaStore,
   {
     /** Returns all teas from the cache, fetching from Shopify if needed. */
-    getTeas: () => Effect.Effect<readonly Tea[], ShopifyError | ParseError | NetworkError | TimeoutError>;
+    getTeas: () => Effect.Effect<
+      readonly Tea[],
+      ShopifyError | ParseError | NetworkError | TimeoutError
+    >;
     /** Returns a specific tea by title (case-insensitive). */
-    getTea: (title: string) => Effect.Effect<Tea, TeaNotFoundError | ShopifyError | ParseError | NetworkError | TimeoutError>;
+    getTea: (
+      title: string,
+    ) => Effect.Effect<
+      Tea,
+      TeaNotFoundError | ShopifyError | ParseError | NetworkError | TimeoutError
+    >;
     /** Returns a specific tea by its stable ID. */
-    getTeaById: (id: string) => Effect.Effect<Tea, TeaNotFoundError | ShopifyError | ParseError | NetworkError | TimeoutError>;
+    getTeaById: (
+      id: string,
+    ) => Effect.Effect<
+      Tea,
+      TeaNotFoundError | ShopifyError | ParseError | NetworkError | TimeoutError
+    >;
     /** Returns a tea wrapped in Option, never fails. */
     getTeaOption: (title: string) => Effect.Effect<Option.Option<Tea>, never>;
     /** Forces a cache refresh from Shopify. */
-    refreshTeas: () => Effect.Effect<readonly Tea[], ShopifyError | ParseError | NetworkError | TimeoutError>;
+    refreshTeas: () => Effect.Effect<
+      readonly Tea[],
+      ShopifyError | ParseError | NetworkError | TimeoutError
+    >;
     /** Returns tea recommendations for a natural language query. */
-    recommend: (query: string, opts?: RecommendOpts) => Effect.Effect<Recommendation[], ShopifyError | ParseError | NetworkError | TimeoutError>;
+    recommend: (
+      query: string,
+      opts?: RecommendOpts,
+    ) => Effect.Effect<
+      Recommendation[],
+      ShopifyError | ParseError | NetworkError | TimeoutError
+    >;
   }
 >() {}
 
@@ -164,7 +197,7 @@ export const TeaStoreLive = Layer.effect(
           if (teaIndex.size === 0) {
             const teas = yield* Effect.catchAll(
               teaCache.get("teas"),
-              () => Effect.succeed([] as readonly Tea[])
+              () => Effect.succeed([] as readonly Tea[]),
             );
             rebuildIndex(teas);
           }
@@ -192,4 +225,3 @@ export const TeaStoreLive = Layer.effect(
     };
   }),
 );
-

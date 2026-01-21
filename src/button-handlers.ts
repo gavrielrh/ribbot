@@ -66,18 +66,32 @@ function updateButtonsRecursively(obj: unknown, teaId: string): unknown {
 
 type TeaButtonResult =
   | { type: "view"; content: string; teaTitle: string }
-  | { type: "toggle"; content: string; teaId: string; teaTitle: string; newState: string }
+  | {
+    type: "toggle";
+    content: string;
+    teaId: string;
+    teaTitle: string;
+    newState: string;
+  }
   | null;
 
 /**
  * Handles tea-related button interactions (view_tea, like_tea, dislike_tea, unfavorite_tea, unhide_tea).
  * Returns true if the interaction was handled, false otherwise.
  */
-export async function handleTeaButton(interaction: ButtonInteraction): Promise<boolean> {
+export async function handleTeaButton(
+  interaction: ButtonInteraction,
+): Promise<boolean> {
   const customId = interaction.customId;
 
   // Check if this is a tea button we handle
-  const teaButtonPrefixes = ["view_tea:", "like_tea:", "dislike_tea:", "unfavorite_tea:", "unhide_tea:"];
+  const teaButtonPrefixes = [
+    "view_tea:",
+    "like_tea:",
+    "dislike_tea:",
+    "unfavorite_tea:",
+    "unhide_tea:",
+  ];
   if (!teaButtonPrefixes.some((prefix) => customId.startsWith(prefix))) {
     return false;
   }
@@ -101,27 +115,67 @@ export async function handleTeaButton(interaction: ButtonInteraction): Promise<b
       if (tea.tags.length > 0) {
         lines.push(`-# Tags: ${tea.tags.join(", ")}`);
       }
-      return { type: "view" as const, content: lines.join("\n"), teaTitle: tea.title };
+      return {
+        type: "view" as const,
+        content: lines.join("\n"),
+        teaTitle: tea.title,
+      };
     }
 
     if (action === "like_tea") {
-      yield* userTeaService.setFavoriteTea({ user_snowflake, tea_title: tea.title });
-      return { type: "toggle" as const, content: `⭐ **${tea.title}** added to favorites!`, teaId, teaTitle: tea.title, newState: "favorited" };
+      yield* userTeaService.setFavoriteTea({
+        user_snowflake,
+        tea_title: tea.title,
+      });
+      return {
+        type: "toggle" as const,
+        content: `⭐ **${tea.title}** added to favorites!`,
+        teaId,
+        teaTitle: tea.title,
+        newState: "favorited",
+      };
     }
 
     if (action === "unfavorite_tea") {
-      yield* userTeaService.clearTeaStatus({ user_snowflake, tea_title: tea.title });
-      return { type: "toggle" as const, content: `💔 **${tea.title}** removed from favorites.`, teaId, teaTitle: tea.title, newState: "none" };
+      yield* userTeaService.clearTeaStatus({
+        user_snowflake,
+        tea_title: tea.title,
+      });
+      return {
+        type: "toggle" as const,
+        content: `💔 **${tea.title}** removed from favorites.`,
+        teaId,
+        teaTitle: tea.title,
+        newState: "none",
+      };
     }
 
     if (action === "dislike_tea") {
-      yield* userTeaService.setDislikedTea({ user_snowflake, tea_title: tea.title });
-      return { type: "toggle" as const, content: `👎 **${tea.title}** hidden from recommendations.`, teaId, teaTitle: tea.title, newState: "hidden" };
+      yield* userTeaService.setDislikedTea({
+        user_snowflake,
+        tea_title: tea.title,
+      });
+      return {
+        type: "toggle" as const,
+        content: `👎 **${tea.title}** hidden from recommendations.`,
+        teaId,
+        teaTitle: tea.title,
+        newState: "hidden",
+      };
     }
 
     if (action === "unhide_tea") {
-      yield* userTeaService.clearTeaStatus({ user_snowflake, tea_title: tea.title });
-      return { type: "toggle" as const, content: `👍 **${tea.title}** is now visible in recommendations.`, teaId, teaTitle: tea.title, newState: "visible" };
+      yield* userTeaService.clearTeaStatus({
+        user_snowflake,
+        tea_title: tea.title,
+      });
+      return {
+        type: "toggle" as const,
+        content: `👍 **${tea.title}** is now visible in recommendations.`,
+        teaId,
+        teaTitle: tea.title,
+        newState: "visible",
+      };
     }
 
     return null;
@@ -131,10 +185,10 @@ export async function handleTeaButton(interaction: ButtonInteraction): Promise<b
     program.pipe(
       Effect.catchAll((error) =>
         Effect.logError("Failed to handle tea button", { error }).pipe(
-          Effect.map(() => null)
+          Effect.map(() => null),
         )
-      )
-    )
+      ),
+    ),
   );
 
   if (!result) {
@@ -148,11 +202,17 @@ export async function handleTeaButton(interaction: ButtonInteraction): Promise<b
   // For toggle actions, update the original message to swap the button
   if (result.type === "toggle") {
     const rawComponents = interaction.message.components.map((c) => c.toJSON());
-    const updatedComponents = updateButtonsRecursively(rawComponents, result.teaId);
+    const updatedComponents = updateButtonsRecursively(
+      rawComponents,
+      result.teaId,
+    );
 
     try {
       // deno-lint-ignore no-explicit-any
-      await interaction.update({ components: updatedComponents as any, flags: MessageFlags.IsComponentsV2 });
+      await interaction.update({
+        components: updatedComponents as any,
+        flags: MessageFlags.IsComponentsV2,
+      });
     } catch {
       // If update fails, just reply normally and return
       await interaction.reply({
@@ -184,7 +244,9 @@ export async function handleTeaButton(interaction: ButtonInteraction): Promise<b
  * Handles legacy button interactions from older tea/random commands using embeds.
  * Returns true if the interaction was handled, false otherwise.
  */
-export async function handleLegacyTeaButton(interaction: ButtonInteraction): Promise<boolean> {
+export async function handleLegacyTeaButton(
+  interaction: ButtonInteraction,
+): Promise<boolean> {
   const customId = interaction.customId;
 
   // Only handle legacy button IDs
@@ -229,10 +291,10 @@ export async function handleLegacyTeaButton(interaction: ButtonInteraction): Pro
     program.pipe(
       Effect.catchAll((error) =>
         Effect.logError("Button handler error", { error }).pipe(
-          Effect.map(() => "An error occurred.")
+          Effect.map(() => "An error occurred."),
         )
-      )
-    )
+      ),
+    ),
   );
 
   if (message) {

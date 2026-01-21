@@ -9,7 +9,7 @@ import {
   MessageFlags,
   SlashCommandBuilder,
 } from "discord";
-import { UserTeaService, TeaStore, Tea } from "../services/index.ts";
+import { Tea, TeaStore, UserTeaService } from "../services/index.ts";
 import { stableId } from "../tea-index.ts";
 import { AppRuntime } from "../runtime.ts";
 
@@ -20,7 +20,10 @@ const data = new SlashCommandBuilder()
   .setDescription("List of your favorite teas");
 
 /** Builds the favorites container for a specific page */
-export function buildFavoritesContainer(favorites: Tea[], page: number): ContainerBuilder {
+export function buildFavoritesContainer(
+  favorites: Tea[],
+  page: number,
+): ContainerBuilder {
   const totalPages = Math.ceil(favorites.length / TEAS_PER_PAGE);
   const startIdx = page * TEAS_PER_PAGE;
   const pageItems = favorites.slice(startIdx, startIdx + TEAS_PER_PAGE);
@@ -86,7 +89,9 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
   const program = Effect.gen(function* () {
     const userTeaService = yield* UserTeaService;
     const teaStore = yield* TeaStore;
-    const favoriteTitles = yield* userTeaService.getFavoriteTeas({ user_snowflake });
+    const favoriteTitles = yield* userTeaService.getFavoriteTeas({
+      user_snowflake,
+    });
 
     // Get tea details for each favorite
     const teas = yield* teaStore.getTeas();
@@ -116,7 +121,9 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
  * Handles button interactions for favorites pagination.
  * Returns true if the interaction was handled, false otherwise.
  */
-const handleButton = async (interaction: ButtonInteraction): Promise<boolean> => {
+const handleButton = async (
+  interaction: ButtonInteraction,
+): Promise<boolean> => {
   const customId = interaction.customId;
 
   if (!customId.startsWith("favorites_page:")) {
@@ -129,7 +136,9 @@ const handleButton = async (interaction: ButtonInteraction): Promise<boolean> =>
   const program = Effect.gen(function* () {
     const userTeaService = yield* UserTeaService;
     const teaStore = yield* TeaStore;
-    const favoriteTitles = yield* userTeaService.getFavoriteTeas({ user_snowflake });
+    const favoriteTitles = yield* userTeaService.getFavoriteTeas({
+      user_snowflake,
+    });
 
     const teas = yield* teaStore.getTeas();
     const favorites = favoriteTitles

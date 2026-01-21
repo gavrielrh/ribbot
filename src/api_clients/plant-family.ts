@@ -1,10 +1,15 @@
-import { Effect, Option, Duration, Schedule, Logger, LogLevel } from "effect";
-import { WikidataError, NetworkError, TimeoutError, ParseError } from "../errors.ts";
+import { Duration, Effect, Logger, LogLevel, Option, Schedule } from "effect";
 import {
-  WikidataEntity,
-  decodeWikidataSearchResponse,
+  NetworkError,
+  ParseError,
+  TimeoutError,
+  WikidataError,
+} from "../errors.ts";
+import {
   decodeWikidataEntitiesResponse,
+  decodeWikidataSearchResponse,
   decodeWikipediaRedirectResponse,
+  WikidataEntity,
 } from "../schemas/wikidata.ts";
 
 const WIKIDATA_FAMILY_RANK_QID = "Q35409";
@@ -52,13 +57,15 @@ const fetchJson = (
           message: "Request timed out after 30 seconds",
           url,
         }),
-      )
-    ),
+      )),
   );
 
 const getTitleRedirect = (
   title: string,
-): Effect.Effect<Option.Option<string>, WikidataError | NetworkError | TimeoutError | ParseError> =>
+): Effect.Effect<
+  Option.Option<string>,
+  WikidataError | NetworkError | TimeoutError | ParseError
+> =>
   Effect.gen(function* () {
     const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${
       encodeURIComponent(title)
@@ -75,7 +82,10 @@ const getTitleRedirect = (
 
 const getTaxonInfo = (
   qid: string,
-): Effect.Effect<Option.Option<TaxonInfo>, WikidataError | NetworkError | TimeoutError | ParseError> =>
+): Effect.Effect<
+  Option.Option<TaxonInfo>,
+  WikidataError | NetworkError | TimeoutError | ParseError
+> =>
   Effect.gen(function* () {
     const url =
       `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims|labels&languages=en&format=json`;
@@ -86,8 +96,10 @@ const getTaxonInfo = (
     const entity = decoded.entities[qid];
     if (!entity || !entity.claims) return Option.none();
 
-    const rankQid = entity.claims.P105?.[0]?.mainsnak?.datavalue?.value?.id ?? null;
-    const parentQid = entity.claims.P171?.[0]?.mainsnak?.datavalue?.value?.id ?? null;
+    const rankQid = entity.claims.P105?.[0]?.mainsnak?.datavalue?.value?.id ??
+      null;
+    const parentQid = entity.claims.P171?.[0]?.mainsnak?.datavalue?.value?.id ??
+      null;
     const label = entity.labels?.en?.value ?? null;
 
     return Option.some({ rankQid, parentQid, label });
@@ -98,7 +110,10 @@ const getTaxonInfo = (
 
 const fetchTaxonChain = (
   entity: WikidataEntity,
-): Effect.Effect<PlantFamily[], WikidataError | NetworkError | TimeoutError | ParseError> =>
+): Effect.Effect<
+  PlantFamily[],
+  WikidataError | NetworkError | TimeoutError | ParseError
+> =>
   Effect.gen(function* () {
     let currentQid = entity.id;
     const families: PlantFamily[] = [];
@@ -135,12 +150,19 @@ const filterPlantEntities = (
   return [...entities];
 };
 
-const logMultipleMatches = (entities: WikidataEntity[]): Effect.Effect<void, never> =>
-  Effect.logDebug(`Multiple plant-related results found: ${entities.length} matches`);
+const logMultipleMatches = (
+  entities: WikidataEntity[],
+): Effect.Effect<void, never> =>
+  Effect.logDebug(
+    `Multiple plant-related results found: ${entities.length} matches`,
+  );
 
 const getEntitiesFromWikipediaTitle = (
   title: string,
-): Effect.Effect<Option.Option<WikidataEntity[]>, WikidataError | NetworkError | TimeoutError | ParseError> =>
+): Effect.Effect<
+  Option.Option<WikidataEntity[]>,
+  WikidataError | NetworkError | TimeoutError | ParseError
+> =>
   Effect.gen(function* () {
     let formattedTitle = title.replace(/\s+/g, "_").toLowerCase();
     formattedTitle = formattedTitle.charAt(0).toUpperCase() +
@@ -175,7 +197,10 @@ const getEntitiesFromWikipediaTitle = (
 
 export const getPlantFamilies = (
   plantName: string,
-): Effect.Effect<Option.Option<PlantFamily[]>, WikidataError | NetworkError | TimeoutError | ParseError> =>
+): Effect.Effect<
+  Option.Option<PlantFamily[]>,
+  WikidataError | NetworkError | TimeoutError | ParseError
+> =>
   Effect.gen(function* () {
     yield* Effect.logDebug(`Looking up plant families for: ${plantName}`);
 
@@ -193,7 +218,9 @@ export const getPlantFamilies = (
       allFamilies.push(...families);
     });
 
-    yield* Effect.logDebug(`Found ${allFamilies.length} families for ${plantName}`);
+    yield* Effect.logDebug(
+      `Found ${allFamilies.length} families for ${plantName}`,
+    );
 
     return allFamilies.length > 0 ? Option.some(allFamilies) : Option.none();
   });
@@ -206,7 +233,9 @@ if (import.meta.main) {
       yield* Effect.logInfo(`Families for "${plantName}":`);
       for (const [index, family] of familiesOption.value.entries()) {
         yield* Effect.logInfo(
-          `${index + 1}: ${family.family} - ${family.label} - ${family.description}`
+          `${
+            index + 1
+          }: ${family.family} - ${family.label} - ${family.description}`,
         );
       }
     } else {
@@ -215,10 +244,10 @@ if (import.meta.main) {
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logError("Failed to look up plant families", { error }).pipe(
-        Effect.flatMap(() => Effect.sync(() => Deno.exit(1)))
+        Effect.flatMap(() => Effect.sync(() => Deno.exit(1))),
       )
     ),
-    Effect.provide(Logger.minimumLogLevel(LogLevel.Info))
+    Effect.provide(Logger.minimumLogLevel(LogLevel.Info)),
   );
   Effect.runPromise(program);
 }
