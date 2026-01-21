@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -6,9 +7,8 @@ import {
   EmbedBuilder,
   SlashCommandBuilder,
 } from "discord";
-import { getTeasFromKv } from "../store.ts";
-import { Tea } from "../api_clients/happy-earth.ts";
-import { getDislikedTeas, getFavoriteTeas } from "../user_tea.ts";
+import { TeaStore, UserTeaService, Tea } from "../services/index.ts";
+import { AppRuntime } from "../runtime.ts";
 
 const CATEGORIES = [
   "Black",
@@ -19,33 +19,6 @@ const CATEGORIES = [
   "Puerh",
   "Herbal",
 ] as const;
-
-const getRandomTea = async ({
-  category,
-  user_snowflake,
-  disliked_teas = [],
-}: {
-  category?: string;
-  user_snowflake: string;
-  disliked_teas?: string[];
-}): Promise<Tea> => {
-  const teas = await getTeasFromKv();
-  let toSelectFrom = teas.filter((tea) =>
-    tea && tea.available && !disliked_teas?.includes(tea.title)
-  );
-  if (category === "favorites") {
-    const favoriteTeas = await getFavoriteTeas({ user_snowflake });
-    toSelectFrom = toSelectFrom.filter((tea) =>
-      favoriteTeas.includes(tea.title)
-    );
-  } else if (category) {
-    toSelectFrom = toSelectFrom.filter((tea) =>
-      tea.productType?.toLowerCase().startsWith(category.toLowerCase())
-    );
-  }
-  const index = Math.floor(Math.random() * (toSelectFrom.length - 1));
-  return toSelectFrom.at(index)!;
-};
 
 const data = new SlashCommandBuilder()
   .setName("random")
@@ -62,15 +35,38 @@ const data = new SlashCommandBuilder()
   );
 
 const execute = async (interaction: ChatInputCommandInteraction) => {
-  let tea: Tea;
   const user_snowflake = interaction.user.id;
-  const disliked_teas = await getDislikedTeas({ user_snowflake });
-  if (interaction.options.data.length === 0) {
-    tea = await getRandomTea({ disliked_teas, user_snowflake });
-  } else {
-    const category = interaction.options.data[0].value as string;
-    tea = await getRandomTea({ category, disliked_teas, user_snowflake });
-  }
+  const category = interaction.options.getString("category") ?? undefined;
+
+  const program = Effect.gen(function* () {
+    const teaStore = yield* TeaStore;
+    const userTeaService = yield* UserTeaService;
+
+    const teas = yield* teaStore.getTeas();
+    const disliked_teas = yield* userTeaService.getDislikedTeas({ user_snowflake });
+
+    let toSelectFrom = [...teas].filter((tea) =>
+      tea && tea.available && !disliked_teas.includes(tea.title)
+    );
+
+    if (category === "favorites") {
+      const favoriteTeas = yield* userTeaService.getFavoriteTeas({ user_snowflake });
+      toSelectFrom = toSelectFrom.filter((tea) =>
+        favoriteTeas.includes(tea.title)
+      );
+    } else if (category) {
+      toSelectFrom = toSelectFrom.filter((tea) =>
+        tea.productType?.toLowerCase().startsWith(category.toLowerCase())
+      );
+    }
+
+    if (toSelectFrom.length === 0) return null;
+    const index = Math.floor(Math.random() * toSelectFrom.length);
+    return toSelectFrom[index] ?? null;
+  });
+
+  const tea = await AppRuntime.runPromise(program).catch(() => null);
+
   if (!tea) {
     await interaction.reply({ content: "No tea found :(" });
     return;

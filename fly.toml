@@ -11,15 +11,5 @@ primary_region = 'yyz'
 [processes]
   app = 'run -A ./src/main.ts'
 
-[http_service]
-  http_checks = []
-  tcp_checks = []
-  internal_port = 8080
-  force_https = true
-  auto_stop_machines = false
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
-
 [[vm]]
   size = 'shared-cpu-1x'

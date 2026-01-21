@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import {
   ActionRowBuilder,
   AutocompleteInteraction,
@@ -7,7 +8,8 @@ import {
   EmbedBuilder,
   SlashCommandBuilder,
 } from "discord";
-import { getTeaFromKv, getTeasFromKv } from "../store.ts";
+import { TeaStore } from "../services/index.ts";
+import { AppRuntime } from "../runtime.ts";
 
 const data = new SlashCommandBuilder()
   .setName("tea")
@@ -18,12 +20,28 @@ const data = new SlashCommandBuilder()
   );
 
 const execute = async (interaction: ChatInputCommandInteraction) => {
-  if (interaction.options.data.length === 0) {
+  const queryOption = interaction.options.getString("query");
+  if (!queryOption) {
     await interaction.reply("Please select a tea.");
     return;
   }
-  const title = interaction.options.data[0].value as string;
-  const tea = await getTeaFromKv(title);
+  const title = queryOption;
+
+  const program = Effect.gen(function* () {
+    const teaStore = yield* TeaStore;
+    return yield* teaStore.getTea(title);
+  });
+
+  const tea = await AppRuntime.runPromise(program).catch(async (error) => {
+    if (error._tag === "TeaNotFoundError") {
+      await interaction.reply(`Tea "${error.title}" not found.`);
+      return null;
+    }
+    throw error;
+  });
+
+  if (!tea) return;
+
   const embed = new EmbedBuilder()
     .setTitle(tea.title)
     .addFields({ name: "In-stock", value: tea.available ? "yes" : "no" })
@@ -56,7 +74,21 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
 
 const autocomplete = async (interaction: AutocompleteInteraction) => {
   const focusedValue = interaction.options.getFocused();
-  const teas = await getTeasFromKv();
+
+  const program = Effect.gen(function* () {
+    const teaStore = yield* TeaStore;
+    return yield* teaStore.getTeas();
+  });
+
+  const teas = await AppRuntime.runPromise(
+    program.pipe(
+      Effect.catchAll((error) =>
+        Effect.logError("Autocomplete error fetching teas", { error }).pipe(
+          Effect.map(() => [] as const)
+        )
+      )
+    )
+  );
   const choices = teas.map((tea) => tea.title);
   const filtered = choices.filter((choice) =>
     choice.toLowerCase().includes(focusedValue.toLocaleLowerCase())

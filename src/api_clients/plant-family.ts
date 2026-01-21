@@ -1,190 +1,224 @@
-// deno run --allow-net=wikidata.org getPlantFamilies.ts
+import { Effect, Option, Duration, Schedule, Logger, LogLevel } from "effect";
+import { WikidataError, NetworkError, TimeoutError, ParseError } from "../errors.ts";
+import {
+  WikidataEntity,
+  decodeWikidataSearchResponse,
+  decodeWikidataEntitiesResponse,
+  decodeWikipediaRedirectResponse,
+} from "../schemas/wikidata.ts";
 
-const WIKIDATA_FAMILY_RANK_QID = "Q35409"; // Family rank QID
-const MAX_LEVELS = 10; // Limit the number of levels to traverse
+const WIKIDATA_FAMILY_RANK_QID = "Q35409";
+const MAX_LEVELS = 10;
 
-// Function to get all plant families for the specified plant
-export async function getPlantFamilies(
+export type PlantFamily = {
+  family: string;
+  label: string;
+  description: string;
+};
+
+type TaxonInfo = {
+  rankQid: string | null;
+  parentQid: string | null;
+  label: string | null;
+};
+
+// Retry policy for external API calls
+const retryPolicy = Schedule.exponential(Duration.seconds(1)).pipe(
+  Schedule.compose(Schedule.recurs(3)),
+);
+
+const fetchJson = (
+  url: string,
+): Effect.Effect<unknown, WikidataError | NetworkError | TimeoutError> =>
+  Effect.tryPromise({
+    try: async () => {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return await response.json();
+    },
+    catch: (error) =>
+      new NetworkError({
+        message: String(error),
+        url,
+      }),
+  }).pipe(
+    Effect.retry(retryPolicy),
+    Effect.timeout(Duration.seconds(30)),
+    Effect.catchTag("TimeoutException", () =>
+      Effect.fail(
+        new TimeoutError({
+          message: "Request timed out after 30 seconds",
+          url,
+        }),
+      )
+    ),
+  );
+
+const getTitleRedirect = (
+  title: string,
+): Effect.Effect<Option.Option<string>, WikidataError | NetworkError | TimeoutError | ParseError> =>
+  Effect.gen(function* () {
+    const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${
+      encodeURIComponent(title)
+    }&redirects&format=json`;
+
+    const json = yield* fetchJson(url);
+    const decoded = yield* decodeWikipediaRedirectResponse(json);
+
+    const redirects = decoded.query.redirects;
+    return redirects?.[0]?.to ? Option.some(redirects[0].to) : Option.none();
+  }).pipe(
+    Effect.catchAll(() => Effect.succeed(Option.none())),
+  );
+
+const getTaxonInfo = (
+  qid: string,
+): Effect.Effect<Option.Option<TaxonInfo>, WikidataError | NetworkError | TimeoutError | ParseError> =>
+  Effect.gen(function* () {
+    const url =
+      `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims|labels&languages=en&format=json`;
+    const json = yield* fetchJson(url);
+
+    const decoded = yield* decodeWikidataEntitiesResponse(json);
+
+    const entity = decoded.entities[qid];
+    if (!entity || !entity.claims) return Option.none();
+
+    const rankQid = entity.claims.P105?.[0]?.mainsnak?.datavalue?.value?.id ?? null;
+    const parentQid = entity.claims.P171?.[0]?.mainsnak?.datavalue?.value?.id ?? null;
+    const label = entity.labels?.en?.value ?? null;
+
+    return Option.some({ rankQid, parentQid, label });
+  }).pipe(
+    Effect.catchTag("ParseError", () => Effect.succeed(Option.none())),
+    Effect.catchAll(() => Effect.succeed(Option.none())),
+  );
+
+const fetchTaxonChain = (
+  entity: WikidataEntity,
+): Effect.Effect<PlantFamily[], WikidataError | NetworkError | TimeoutError | ParseError> =>
+  Effect.gen(function* () {
+    let currentQid = entity.id;
+    const families: PlantFamily[] = [];
+    const seenQids = new Set<string>();
+
+    for (let i = 0; i < MAX_LEVELS; i++) {
+      if (seenQids.has(currentQid)) break;
+      seenQids.add(currentQid);
+
+      const taxonInfoOption = yield* getTaxonInfo(currentQid);
+      if (Option.isNone(taxonInfoOption)) break;
+
+      const taxonInfo = taxonInfoOption.value;
+
+      if (taxonInfo.rankQid === WIKIDATA_FAMILY_RANK_QID && taxonInfo.label) {
+        families.push({
+          family: taxonInfo.label,
+          label: entity.label,
+          description: entity.description,
+        });
+      }
+
+      if (!taxonInfo.parentQid) break;
+      currentQid = taxonInfo.parentQid;
+    }
+
+    return families;
+  });
+
+const filterPlantEntities = (
+  _term: string,
+  entities: readonly WikidataEntity[],
+): WikidataEntity[] => {
+  return [...entities];
+};
+
+const logMultipleMatches = (entities: WikidataEntity[]): Effect.Effect<void, never> =>
+  Effect.logDebug(`Multiple plant-related results found: ${entities.length} matches`);
+
+const getEntitiesFromWikipediaTitle = (
+  title: string,
+): Effect.Effect<Option.Option<WikidataEntity[]>, WikidataError | NetworkError | TimeoutError | ParseError> =>
+  Effect.gen(function* () {
+    let formattedTitle = title.replace(/\s+/g, "_").toLowerCase();
+    formattedTitle = formattedTitle.charAt(0).toUpperCase() +
+      formattedTitle.slice(1);
+
+    const titleRedirectOption = yield* getTitleRedirect(formattedTitle);
+    if (Option.isSome(titleRedirectOption)) {
+      formattedTitle = titleRedirectOption.value;
+    }
+
+    const searchUrl =
+      `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${
+        encodeURIComponent(formattedTitle)
+      }&language=en&limit=20&format=json`;
+
+    const json = yield* fetchJson(searchUrl);
+    const decoded = yield* decodeWikidataSearchResponse(json);
+
+    const results = decoded.search;
+
+    if (results.length > 0) {
+      const plantEntities = filterPlantEntities(formattedTitle, results);
+      if (plantEntities.length > 0) {
+        if (plantEntities.length > 1) {
+          yield* logMultipleMatches(plantEntities);
+        }
+        return Option.some(plantEntities);
+      }
+    }
+    return Option.none();
+  });
+
+export const getPlantFamilies = (
   plantName: string,
-): Promise<{ family: string; label: string; description: string }[] | null> {
-  try {
-    // Search for the plant and retrieve its entity ID
-    const entities = await getEntitiesFromWikipediaTitle(plantName);
-    if (!entities) return null;
+): Effect.Effect<Option.Option<PlantFamily[]>, WikidataError | NetworkError | TimeoutError | ParseError> =>
+  Effect.gen(function* () {
+    yield* Effect.logDebug(`Looking up plant families for: ${plantName}`);
 
-    const allFamilies: {
-      family: string;
-      label: string;
-      description: string;
-    }[] = [];
-    const entityPromises = entities.map((entity) => fetchTaxonChain(entity));
+    const entitiesOption = yield* getEntitiesFromWikipediaTitle(plantName);
+    if (Option.isNone(entitiesOption)) return Option.none();
 
-    // Wait for all entity taxon chains to be processed in parallel
-    const results = await Promise.all(entityPromises);
+    const entities = entitiesOption.value;
+    const results = yield* Effect.all(
+      entities.map((entity) => fetchTaxonChain(entity)),
+      { concurrency: "unbounded" },
+    );
 
-    // Collect all families found in the results
+    const allFamilies: PlantFamily[] = [];
     results.forEach((families) => {
-      if (families) allFamilies.push(...families);
+      allFamilies.push(...families);
     });
 
-    return allFamilies.length > 0 ? allFamilies : null;
-  } catch (error) {
-    console.error(`Error retrieving families for "${plantName}":`, error);
-    return null;
-  }
-}
+    yield* Effect.logDebug(`Found ${allFamilies.length} families for ${plantName}`);
 
-// Function to traverse the taxon chain for an entity and find all families
-async function fetchTaxonChain(
-  entity: any,
-): Promise<{ family: string; label: string; description: string }[] | null> {
-  let currentQid = entity.id;
-  const families: { family: string; label: string; description: string }[] = [];
-  const seenQids = new Set<string>();
-
-  for (let i = 0; i < MAX_LEVELS; i++) {
-    // Prevent revisiting the same QID
-    if (seenQids.has(currentQid)) break;
-    seenQids.add(currentQid);
-
-    const taxonInfo = await getTaxonInfo(currentQid);
-    if (!taxonInfo) return null;
-
-    // If the rank is "family", store the family in the list
-    if (taxonInfo.rankQid === WIKIDATA_FAMILY_RANK_QID) {
-      families.push({
-        family: taxonInfo.label!,
-        label: entity.label,
-        description: entity.description,
-      });
-    }
-
-    if (!taxonInfo.parentQid) break; // No more parent
-    currentQid = taxonInfo.parentQid;
-  }
-
-  return families.length > 0 ? families : null;
-}
-
-// Function to get the redirect information based on the title
-async function getTitleRedirect(title: string): Promise<string | null> {
-  const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${
-    encodeURIComponent(title)
-  }&redirects&format=json`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    const redirects = data.query.redirects;
-    return redirects[0]?.to ?? null;
-  } catch (err) {
-    return null;
-  }
-}
-
-// Function to search for entities related to the plant name and retrieve the entity IDs
-async function getEntitiesFromWikipediaTitle(
-  title: string,
-): Promise<any[] | null> {
-  let formattedTitle = title.replace(/\s+/g, "_").toLowerCase();
-  formattedTitle = formattedTitle.charAt(0).toUpperCase() +
-    formattedTitle.slice(1);
-  const titleRedirect = await getTitleRedirect(formattedTitle);
-  if (titleRedirect) {
-    formattedTitle = titleRedirect;
-  }
-
-  const searchUrl =
-    `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${
-      encodeURIComponent(
-        formattedTitle,
-      )
-    }&language=en&limit=20&format=json`;
-
-  const searchResults = await fetchJson(searchUrl);
-
-  if (searchResults.search.length > 0) {
-    const plantEntities = filterPlantEntities(
-      formattedTitle,
-      searchResults.search,
-    );
-    if (plantEntities.length > 0) {
-      if (plantEntities.length > 1) {
-        logMultipleMatches(plantEntities);
-      }
-      return plantEntities || null;
-    }
-  }
-  return null;
-}
-
-// Function to handle fetching JSON data
-async function fetchJson(url: string): Promise<any> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to fetch data from ${url}`);
-  return await response.json();
-}
-
-// Function to filter plant-related entities based on label or description
-function filterPlantEntities(term: string, entities: any[]): any[] {
-  return entities;
-}
-
-// Function to log multiple plant-related matches
-function logMultipleMatches(entities: any[]): void {
-  console.log(`Multiple plant-related results found:`);
-  entities.forEach((entity, index) => {
-    console.log(`${index + 1}: ${entity.label} - ${entity.description}`);
+    return allFamilies.length > 0 ? Option.some(allFamilies) : Option.none();
   });
-  console.log("Selecting the first match...");
-}
 
-// Function to retrieve taxon information (rank, parent, label) for a given QID
-async function getTaxonInfo(
-  qid: string,
-): Promise<
-  | { rankQid: string | null; parentQid: string | null; label: string | null }
-  | null
-> {
-  const url =
-    `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims|labels&languages=en&format=json`;
-  const data = await fetchJson(url);
-
-  const entity = data?.entities?.[qid];
-  if (!entity || !entity.claims) return null;
-
-  const rankQid = getWikidataClaimValue(entity.claims.P105);
-  const parentQid = getWikidataClaimValue(entity.claims.P171);
-  const label = entity.labels?.en?.value || null;
-
-  return { rankQid, parentQid, label };
-}
-
-// Utility function to extract the first valid value (ID) from a Wikidata claim
-function getWikidataClaimValue(claimArray: any[]): string | null {
-  const claim = claimArray?.[0]?.mainsnak?.datavalue?.value;
-  return claim?.id || null;
-}
-
-// Allow running via CLI
 if (import.meta.main) {
   const plantName = Deno.args[0] || "Rose";
-  getPlantFamilies(plantName).then((families) => {
-    if (families) {
-      console.log(`Families for "${plantName}":`);
-      families.forEach((family, index) => {
-        console.log(
-          `${
-            index + 1
-          }: ${family.family} - ${family.label} - ${family.description}`,
+  const program = Effect.gen(function* () {
+    const familiesOption = yield* getPlantFamilies(plantName);
+    if (Option.isSome(familiesOption)) {
+      yield* Effect.logInfo(`Families for "${plantName}":`);
+      for (const [index, family] of familiesOption.value.entries()) {
+        yield* Effect.logInfo(
+          `${index + 1}: ${family.family} - ${family.label} - ${family.description}`
         );
-      });
+      }
     } else {
-      console.log(`No families found for "${plantName}".`);
+      yield* Effect.logInfo(`No families found for "${plantName}".`);
     }
-  }).catch((err) => {
-    console.error(err);
-    Deno.exit(1);
-  });
+  }).pipe(
+    Effect.catchAll((error) =>
+      Effect.logError("Failed to look up plant families", { error }).pipe(
+        Effect.flatMap(() => Effect.sync(() => Deno.exit(1)))
+      )
+    ),
+    Effect.provide(Logger.minimumLogLevel(LogLevel.Info))
+  );
+  Effect.runPromise(program);
 }

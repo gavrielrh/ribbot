@@ -1,3 +1,4 @@
+import { Effect, Option } from "effect";
 import {
   ChatInputCommandInteraction,
   EmbedBuilder,
@@ -18,11 +19,25 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     await interaction.reply("Please specify a plant");
     return;
   }
-  const result = await getPlantFamilies(plantName);
-  if (!result) {
-    await interaction.reply("Family not found");
+
+  await interaction.deferReply();
+
+  const resultOption = await Effect.runPromise(
+    getPlantFamilies(plantName).pipe(
+      Effect.catchAll((error) =>
+        Effect.logError("Plant family lookup failed", { error }).pipe(
+          Effect.map(() => Option.none())
+        )
+      )
+    )
+  );
+
+  if (Option.isNone(resultOption)) {
+    await interaction.editReply("Family not found");
     return;
   }
+
+  const result = resultOption.value;
   const embeds = result.map((plant) => (
     new EmbedBuilder()
       .setTitle(
@@ -39,7 +54,7 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
         inline: true,
       })
   ));
-  await interaction.reply({
+  await interaction.editReply({
     embeds: [embeds[0]],
   });
 };
