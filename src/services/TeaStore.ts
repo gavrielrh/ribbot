@@ -3,7 +3,7 @@ import { TeaNotFoundError, ShopifyError, NetworkError, TimeoutError, ParseError 
 import { ShopifyClient, productHasTag } from "./ShopifyClient.ts";
 import { Product } from "../schemas/shopify.ts";
 import { htmlToMarkdown } from "../format.ts";
-import { createTeaRecommender, type Recommendation, type RecommendOpts } from "../tea-index.ts";
+import { createTeaRecommender, stableId, type Recommendation, type RecommendOpts } from "../tea-index.ts";
 import {
   TYPE_DENY_LIST,
   TAGS_DENY_LIST,
@@ -85,6 +85,8 @@ export class TeaStore extends Context.Tag("TeaStore")<
     getTeas: () => Effect.Effect<readonly Tea[], ShopifyError | ParseError | NetworkError | TimeoutError>;
     /** Returns a specific tea by title (case-insensitive). */
     getTea: (title: string) => Effect.Effect<Tea, TeaNotFoundError | ShopifyError | ParseError | NetworkError | TimeoutError>;
+    /** Returns a specific tea by its stable ID. */
+    getTeaById: (id: string) => Effect.Effect<Tea, TeaNotFoundError | ShopifyError | ParseError | NetworkError | TimeoutError>;
     /** Returns a tea wrapped in Option, never fails. */
     getTeaOption: (title: string) => Effect.Effect<Option.Option<Tea>, never>;
     /** Forces a cache refresh from Shopify. */
@@ -114,10 +116,12 @@ export const TeaStoreLive = Layer.effect(
     });
 
     let teaIndex: Map<string, Tea> = new Map();
+    let teaIdIndex: Map<string, Tea> = new Map();
     let recommender: ReturnType<typeof createTeaRecommender> | null = null;
 
     const rebuildIndex = (teas: readonly Tea[]) => {
       teaIndex = new Map(teas.map((tea) => [tea.title.toLowerCase(), tea]));
+      teaIdIndex = new Map(teas.map((tea) => [stableId(tea.title), tea]));
       recommender = createTeaRecommender([...teas]);
     };
 
@@ -138,6 +142,19 @@ export const TeaStoreLive = Layer.effect(
           const tea = teaIndex.get(title.toLowerCase());
           if (!tea) {
             return yield* Effect.fail(new TeaNotFoundError({ title }));
+          }
+          return tea;
+        }),
+
+      getTeaById: (id: string) =>
+        Effect.gen(function* () {
+          if (teaIdIndex.size === 0) {
+            const teas = yield* teaCache.get("teas");
+            rebuildIndex(teas);
+          }
+          const tea = teaIdIndex.get(id);
+          if (!tea) {
+            return yield* Effect.fail(new TeaNotFoundError({ title: id }));
           }
           return tea;
         }),

@@ -117,7 +117,8 @@ function tokenize(text: string): string[] {
     .filter((t) => t.length >= 2 && !STOPWORDS.has(t));
 }
 
-function stableId(title: string): string {
+/** Generates a stable ID from a tea title using FNV-1a hash. */
+export function stableId(title: string): string {
   let hash = 0x811c9dc5;
   for (const char of normalize(title)) {
     hash ^= char.charCodeAt(0);
