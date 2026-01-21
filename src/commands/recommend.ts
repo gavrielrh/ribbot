@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import {
   ActionRowBuilder,
   ButtonBuilder,
+  ButtonInteraction,
   ButtonStyle,
   ChatInputCommandInteraction,
   ContainerBuilder,
@@ -14,6 +15,8 @@ import type { Recommendation } from "../tea-index.ts";
 import { TeaStore, UserTeaService } from "../services/index.ts";
 import { AppRuntime } from "../runtime.ts";
 import { truncate } from "../utils.ts";
+
+const RECS_PER_PAGE = 3;
 
 const data = new SlashCommandBuilder()
   .setName("recommend")
@@ -100,10 +103,9 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     // Get more recommendations than needed to account for filtering
     const allRecommendations = yield* teaStore.recommend(query, { topN: 15 });
 
-    // Filter out disliked teas and take top 5
+    // Filter out disliked teas (keep up to 15 for pagination)
     const filtered = allRecommendations
-      .filter((rec) => !dislikedTeas.includes(rec.tea.title))
-      .slice(0, 5);
+      .filter((rec) => !dislikedTeas.includes(rec.tea.title));
 
     return { recommendations: filtered, favoriteTeas };
   });
@@ -128,19 +130,44 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     return;
   }
 
+  const container = buildRecommendContainer(
+    recommendations,
+    favoriteTeas,
+    query,
+    0,
+  );
+
+  await interaction.reply({
+    components: [container],
+    flags: MessageFlags.IsComponentsV2,
+  });
+};
+
+/** Builds the recommendation container for a specific page */
+function buildRecommendContainer(
+  recommendations: Recommendation[],
+  favoriteTeas: string[],
+  query: string,
+  page: number,
+): ContainerBuilder {
+  const totalPages = Math.ceil(recommendations.length / RECS_PER_PAGE);
+  const startIdx = page * RECS_PER_PAGE;
+  const pageItems = recommendations.slice(startIdx, startIdx + RECS_PER_PAGE);
+
   const container = new ContainerBuilder()
     .setAccentColor(0x2d7d46); // Tea green color
 
-  // Header showing the query
+  // Header showing the query and page info
+  const pageInfo = totalPages > 1 ? ` (${page + 1}/${totalPages})` : "";
   container.addTextDisplayComponents((t) =>
-    t.setContent(`## Recommendations for "${query}"`)
+    t.setContent(`## Recommendations for "${query}"${pageInfo}`)
   );
   container.addSeparatorComponents((s) =>
     s.setSpacing(SeparatorSpacingSize.Small).setDivider(false)
   );
 
-  // Add each recommendation
-  recommendations.forEach((recommendation, index) => {
+  // Add the recommendation for this page
+  for (const recommendation of pageItems) {
     const tea = recommendation.tea;
     const thumbnailUrl = tea.thumbnail;
     const content = formatTeaContent(recommendation);
@@ -178,22 +205,104 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
       .setCustomId(`view_tea:${tea.id}`)
       .setLabel("Details")
       .setStyle(ButtonStyle.Secondary);
-    const actionRow = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(favoriteButton, dislikeButton, viewButton);
+    const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      favoriteButton,
+      dislikeButton,
+      viewButton,
+    );
     container.addActionRowComponents(actionRow);
+  }
 
-    // Add separator between items (but not after the last one)
-    if (index < recommendations.length - 1) {
-      container.addSeparatorComponents((s) =>
-        s.setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-      );
-    }
+  // Add pagination buttons if needed
+  if (totalPages > 1) {
+    // Encode query in customId (truncate if needed to fit within Discord's 100 char limit)
+    const encodedQuery = encodeURIComponent(query).slice(0, 70);
+    const prevButton = new ButtonBuilder()
+      .setCustomId(`rec_page:${page - 1}:${encodedQuery}`)
+      .setLabel("Previous")
+      .setEmoji("◀️")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(page === 0);
+    const nextButton = new ButtonBuilder()
+      .setCustomId(`rec_page:${page + 1}:${encodedQuery}`)
+      .setLabel("Next")
+      .setEmoji("▶️")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(page >= totalPages - 1);
+    const paginationRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      prevButton,
+      nextButton,
+    );
+    container.addActionRowComponents(paginationRow);
+  }
+
+  return container;
+}
+
+/**
+ * Handles button interactions for recommend pagination.
+ * Returns true if the interaction was handled, false otherwise.
+ */
+const handleButton = async (
+  interaction: ButtonInteraction,
+): Promise<boolean> => {
+  const customId = interaction.customId;
+
+  if (!customId.startsWith("rec_page:")) {
+    return false;
+  }
+
+  const parts = customId.split(":");
+  const page = parseInt(parts[1], 10);
+  const encodedQuery = parts.slice(2).join(":"); // Handle colons in query
+  const query = decodeURIComponent(encodedQuery);
+  const user_snowflake = interaction.user.id;
+
+  const program = Effect.gen(function* () {
+    const teaStore = yield* TeaStore;
+    const userTeaService = yield* UserTeaService;
+
+    const dislikedTeas = yield* userTeaService.getDislikedTeas({
+      user_snowflake,
+    });
+    const favoriteTeas = yield* userTeaService.getFavoriteTeas({
+      user_snowflake,
+    });
+
+    const allRecommendations = yield* teaStore.recommend(query, { topN: 15 });
+    const filtered = allRecommendations.filter(
+      (rec) => !dislikedTeas.includes(rec.tea.title),
+    );
+
+    return { recommendations: filtered, favoriteTeas };
   });
 
-  await interaction.reply({
+  const result = await AppRuntime.runPromise(program).catch(() => ({
+    recommendations: [] as Recommendation[],
+    favoriteTeas: [] as string[],
+  }));
+
+  const { recommendations, favoriteTeas } = result;
+
+  if (recommendations.length === 0) {
+    await interaction.update({
+      content: "No recommendations found.",
+      components: [],
+    });
+    return true;
+  }
+
+  const container = buildRecommendContainer(
+    recommendations,
+    favoriteTeas,
+    query,
+    page,
+  );
+  await interaction.update({
     components: [container],
     flags: MessageFlags.IsComponentsV2,
   });
+  return true;
 };
 
-export { data, execute };
+export { data, execute, handleButton };
