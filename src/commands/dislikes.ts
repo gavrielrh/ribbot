@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import {
   ActionRowBuilder,
   ButtonBuilder,
+  ButtonInteraction,
   ButtonStyle,
   ChatInputCommandInteraction,
   ContainerBuilder,
@@ -111,4 +112,49 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
   });
 };
 
-export { data, execute };
+/**
+ * Handles button interactions for dislikes pagination.
+ * Returns true if the interaction was handled, false otherwise.
+ */
+const handleButton = async (interaction: ButtonInteraction): Promise<boolean> => {
+  const customId = interaction.customId;
+
+  if (!customId.startsWith("dislikes_page:")) {
+    return false;
+  }
+
+  const page = parseInt(customId.split(":")[1], 10);
+  const user_snowflake = interaction.user.id;
+
+  const program = Effect.gen(function* () {
+    const userTeaService = yield* UserTeaService;
+    const teaStore = yield* TeaStore;
+    const dislikedTitles = yield* userTeaService.getDislikedTeas({ user_snowflake });
+
+    const teas = yield* teaStore.getTeas();
+    const dislikes = dislikedTitles
+      .map((title) => teas.find((t) => t.title === title))
+      .filter((t) => t !== undefined);
+
+    return dislikes;
+  });
+
+  const dislikes = await AppRuntime.runPromise(program).catch(() => []);
+
+  if (dislikes.length === 0) {
+    await interaction.update({
+      content: "You haven't hidden any teas yet!",
+      components: [],
+    });
+    return true;
+  }
+
+  const container = buildDislikesContainer(dislikes, page);
+  await interaction.update({
+    components: [container],
+    flags: MessageFlags.IsComponentsV2,
+  });
+  return true;
+};
+
+export { data, execute, handleButton };
